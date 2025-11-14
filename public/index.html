@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Bug Catcher Game</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: linear-gradient(to bottom, #e0f7fa, #fffde7);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      padding: 16px;
+    }
+
+    h1 {
+      margin: 8px 0;
+      text-align: center;
+      font-size: 1.6rem;
+    }
+
+    .subtitle {
+      font-size: 0.95rem;
+      margin-bottom: 12px;
+      text-align: center;
+      color: #555;
+    }
+
+    .top-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .info-box {
+      display: flex;
+      gap: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .info-label {
+      font-weight: 500;
+      color: #555;
+    }
+
+    #message {
+      min-height: 1.4em;
+      font-size: 0.95rem;
+      text-align: center;
+      color: #444;
+    }
+
+    #start-btn {
+      padding: 8px 16px;
+      font-size: 1rem;
+      border-radius: 999px;
+      border: none;
+      background: #00796b;
+      color: #ffffff;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.2s ease;
+      touch-action: manipulation;
+    }
+
+    #start-btn:active {
+      transform: translateY(1px);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+      background: #00695c;
+    }
+
+    /* Play area */
+
+    #play-area {
+      position: relative;
+      width: min(90vw, 500px);
+      height: min(65vh, 400px);
+      max-height: 450px;
+      background: radial-gradient(circle at top left, #ffffff, #b2dfdb);
+      border-radius: 24px;
+      border: 3px solid #004d40;
+      overflow: hidden;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+      touch-action: none; /* helps with touch tapping inside */
+    }
+
+    /* Bug */
+
+    #bug {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #ffebee, #c62828);
+      border: 3px solid #4e342e;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      cursor: pointer;
+      user-select: none;
+      touch-action: none;
+      transform-origin: center center;
+      transition: transform 0.08s ease-out;
+    }
+
+    #bug.hidden {
+      display: none;
+    }
+
+    /* Simple “pop” animation when bug is tapped */
+    #bug.caught {
+      transform: scale(1.15);
+    }
+
+    /* Small instructions at bottom */
+
+    .instructions {
+      margin-top: 10px;
+      font-size: 0.85rem;
+      text-align: center;
+      color: #555;
+      max-width: 500px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Bug Catcher</h1>
+  <div class="subtitle">Tap the bug as many times as you can before time runs out!</div>
+
+  <div class="top-bar">
+    <div class="info-box">
+      <span class="info-label">Score:</span>
+      <span id="score">0</span>
+    </div>
+    <div class="info-box">
+      <span class="info-label">Time:</span>
+      <span id="time">30</span>s
+    </div>
+    <button id="start-btn">Start Game</button>
+  </div>
+
+  <div id="message"></div>
+
+  <div id="play-area">
+    <div id="bug" class="hidden" aria-label="Bug">🐞</div>
+  </div>
+
+  <div class="instructions">
+    Tip: The bug moves faster as your score goes up.  
+    Great for 2nd–3rd graders: quick rounds, big buttons, and simple tapping.
+  </div>
+
+  <script>
+    const playArea = document.getElementById("play-area");
+    const bug = document.getElementById("bug");
+    const scoreDisplay = document.getElementById("score");
+    const timeDisplay = document.getElementById("time");
+    const message = document.getElementById("message");
+    const startBtn = document.getElementById("start-btn");
+
+    let score = 0;
+    let timeLeft = 30;           // seconds per round
+    let gameActive = false;
+    let timerId = null;          // countdown timer
+    let moveId = null;           // bug movement timer
+
+    // Move bug to a random position inside play area
+    function moveBugRandomly() {
+      const areaRect = playArea.getBoundingClientRect();
+      const bugRect = bug.getBoundingClientRect();
+
+      const maxX = areaRect.width - bugRect.width;
+      const maxY = areaRect.height - bugRect.height;
+
+      const randomX = Math.random() * maxX;
+      const randomY = Math.random() * maxY;
+
+      bug.style.left = randomX + "px";
+      bug.style.top = randomY + "px";
+    }
+
+    function setBugSpeed() {
+      // Clear any old movement timer
+      if (moveId) clearInterval(moveId);
+
+      // Faster as score increases, with a minimum speed limit
+      const baseSpeed = 1200; // ms
+      const speed = Math.max(350, baseSpeed - score * 40);
+
+      moveId = setInterval(() => {
+        if (gameActive) {
+          moveBugRandomly();
+        }
+      }, speed);
+    }
+
+    function startGame() {
+      score = 0;
+      timeLeft = 30;
+      gameActive = true;
+
+      scoreDisplay.textContent = score;
+      timeDisplay.textContent = timeLeft;
+      message.textContent = "Catch the bug!";
+
+      bug.classList.remove("hidden");
+      bug.classList.remove("caught");
+      moveBugRandomly();
+      setBugSpeed();
+
+      // Clear old timers if any
+      if (timerId) clearInterval(timerId);
+
+      timerId = setInterval(() => {
+        timeLeft--;
+        timeDisplay.textContent = timeLeft;
+
+        if (timeLeft <= 0) {
+          endGame();
+        }
+      }, 1000);
+    }
+
+    function endGame() {
+      gameActive = false;
+      if (timerId) clearInterval(timerId);
+      if (moveId) clearInterval(moveId);
+
+      bug.classList.add("hidden");
+      message.textContent = `Time's up! Your score: ${score}`;
+    }
+
+    function handleBugTap(event) {
+      // Prevents “ghost” mouse events after touch
+      event.preventDefault();
+
+      if (!gameActive) return;
+
+      score++;
+      scoreDisplay.textContent = score;
+
+      // Quick pop animation
+      bug.classList.add("caught");
+      setTimeout(() => bug.classList.remove("caught"), 80);
+
+      // Move immediately when caught
+      moveBugRandomly();
+      setBugSpeed();
+    }
+
+    // Support both mouse and touch
+    bug.addEventListener("click", handleBugTap);
+    bug.addEventListener("touchstart", handleBugTap, { passive: false });
+
+    startBtn.addEventListener("click", () => {
+      startGame();
+    });
+
+    // Ensure bug stays inside if the screen is rotated or resized
+    window.addEventListener("resize", () => {
+      if (!bug.classList.contains("hidden")) {
+        moveBugRandomly();
+      }
+    });
+  </script>
+</body>
+</html>
