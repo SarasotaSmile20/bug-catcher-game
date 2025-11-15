@@ -4,6 +4,7 @@ const timerEl = document.getElementById("timer");
 const bestScoreEl = document.getElementById("best-score");
 const startBtn = document.getElementById("start-btn");
 const messageEl = document.getElementById("message");
+const blaster = document.getElementById("blaster");
 
 // Sounds
 const sndLaser = document.getElementById("snd-laser");
@@ -21,11 +22,78 @@ let doublePointsActive = false;
 let freezeActive = false;
 let powerupTimeout = null;
 
+// blaster position (in pixels within gameArea)
+let blasterX = 0;
+let blasterWidth = 0;
+
 // Load best score
 const storedBest = parseInt(localStorage.getItem("spaceBugBest") || "0", 10);
 if (!isNaN(storedBest)) {
   bestScoreEl.textContent = storedBest;
 }
+
+/* ---------- BLASTER SETUP & MOVEMENT ---------- */
+
+function initBlaster() {
+  if (!gameArea || !blaster) return;
+  const areaRect = gameArea.getBoundingClientRect();
+  const blRect = blaster.getBoundingClientRect();
+
+  // if width not known yet, assume 160px (matches CSS)
+  blasterWidth = blRect.width || 160;
+
+  // center it
+  blasterX = (areaRect.width - blasterWidth) / 2;
+  blaster.style.left = `${blasterX}px`;
+}
+
+function moveBlasterTo(newX) {
+  const areaRect = gameArea.getBoundingClientRect();
+  const min = 0;
+  const max = areaRect.width - blasterWidth;
+
+  blasterX = Math.max(min, Math.min(newX, max));
+  blaster.style.left = `${blasterX}px`;
+}
+
+function moveBlaster(delta) {
+  moveBlasterTo(blasterX + delta);
+}
+
+// keyboard controls
+window.addEventListener("keydown", e => {
+  if (!gameRunning) return;
+
+  if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") {
+    e.preventDefault();
+    moveBlaster(-30);
+  } else if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") {
+    e.preventDefault();
+    moveBlaster(30);
+  }
+});
+
+// tap / click in empty space to slide blaster there (good for tablet)
+gameArea.addEventListener(
+  "click",
+  e => {
+    if (!gameRunning) return;
+    // ignore clicks on bugs/powerups/buttons
+    if (e.target !== gameArea) return;
+
+    const areaRect = gameArea.getBoundingClientRect();
+    const targetX = e.clientX - areaRect.left;
+    moveBlasterTo(targetX - blasterWidth / 2);
+  },
+  { passive: true }
+);
+
+// re-center on resize
+window.addEventListener("resize", () => {
+  initBlaster();
+});
+
+/* ---------- GAME LOGIC ---------- */
 
 function resetGame() {
   score = 0;
@@ -43,6 +111,9 @@ function resetGame() {
     clearTimeout(powerupTimeout);
     powerupTimeout = null;
   }
+
+  // re-center blaster for new mission
+  initBlaster();
 }
 
 function startGame() {
@@ -53,6 +124,7 @@ function startGame() {
   startBtn.classList.add("hidden");
   hideMessage();
 
+  // main spawn loop
   gameTickInterval = setInterval(() => {
     if (!freezeActive) {
       const spawnCount = Math.random() < 0.5 ? 1 : 2;
@@ -66,6 +138,7 @@ function startGame() {
     }
   }, 850);
 
+  // timer
   timerInterval = setInterval(() => {
     timeLeft -= 1;
     timerEl.textContent = timeLeft.toString();
@@ -154,11 +227,10 @@ function handleBugClick(bug, x, y) {
 function chainBlastNearby(x, y) {
   const radius = 70;
   const bugs = [...gameArea.querySelectorAll(".bug")];
-
   const gaRect = gameArea.getBoundingClientRect();
 
-  bugs.forEach(bug => {
-    const rect = bug.getBoundingClientRect();
+  bugs.forEach(b => {
+    const rect = b.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2 - gaRect.left;
     const centerY = rect.top + rect.height / 2 - gaRect.top;
 
@@ -167,7 +239,7 @@ function chainBlastNearby(x, y) {
     const dist = Math.sqrt(dx * dx + dy * dy);
 
     if (dist < radius) {
-      bug.remove();
+      b.remove();
       let points = 5;
       if (doublePointsActive) points *= 2;
       score += points;
@@ -294,4 +366,9 @@ function playSoundSafe(audio) {
   }
 }
 
+/* ---------- EVENT HOOKS ---------- */
+
 startBtn.addEventListener("click", startGame);
+
+// initialize once DOM is laid out
+initBlaster();

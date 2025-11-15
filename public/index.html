@@ -1,71 +1,297 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Space Bug Blaster</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="styles.css" />
-</head>
-<body>
-  <div class="game-page">
-    <header class="hud">
-      <div class="hud-section">
-        <span class="hud-label">Score:</span>
-        <span id="score" class="hud-value">0</span>
-      </div>
-      <div class="hud-section">
-        <span class="hud-label">Time:</span>
-        <span id="timer" class="hud-value">30</span>s
-      </div>
-      <div class="hud-section">
-        <span class="hud-label">Best:</span>
-        <span id="best-score" class="hud-value">0</span>
-      </div>
-    </header>
+const gameArea = document.getElementById("game-area");
+const scoreEl = document.getElementById("score");
+const timerEl = document.getElementById("timer");
+const bestScoreEl = document.getElementById("best-score");
+const startBtn = document.getElementById("start-btn");
+const messageEl = document.getElementById("message");
 
-    <main class="game-wrapper">
-      <div id="game-area" class="game-area">
-        <div class="space-overlay"></div>
+// Sounds
+const sndLaser = document.getElementById("snd-laser");
+const sndPowerup = document.getElementById("snd-powerup");
+const sndMega = document.getElementById("snd-mega");
+const sndGameover = document.getElementById("snd-gameover");
 
-        <div id="message" class="message hidden"></div>
+let score = 0;
+let timeLeft = 30;
+let gameTickInterval = null;
+let timerInterval = null;
+let gameRunning = false;
 
-        <button id="start-btn" class="start-button">
-          Start Mission
-        </button>
+let doublePointsActive = false;
+let freezeActive = false;
+let powerupTimeout = null;
 
-        <div class="weapon-decor">
-          <div class="raygun">
-            <div class="raygun-barrel"></div>
-            <div class="raygun-body"></div>
-            <div class="raygun-handle"></div>
-          </div>
-          <div class="weapon-glow"></div>
-        </div>
-      </div>
-    </main>
+// Load best score
+const storedBest = parseInt(localStorage.getItem("spaceBugBest") || "0", 10);
+if (!isNaN(storedBest)) {
+  bestScoreEl.textContent = storedBest;
+}
 
-    <section class="instructions">
-      <h2>How to Play</h2>
-      <ul>
-        <li>Tap the <strong>space bugs</strong> to blast them.</li>
-        <li>Grab <strong>power-ups</strong>:
-          <ul>
-            <li><span class="badge freeze">Freeze</span> – pause new bugs.</li>
-            <li><span class="badge double">2x</span> – double points.</li>
-            <li><span class="badge mega">Mega</span> – blast all bugs on screen.</li>
-          </ul>
-        </li>
-        <li>You have <strong>30 seconds</strong>. Try to beat the best score!</li>
-      </ul>
-    </section>
-  </div>
+function resetGame() {
+  score = 0;
+  timeLeft = 30;
+  scoreEl.textContent = "0";
+  timerEl.textContent = "30";
 
-  <!-- Sounds (add the .mp3/.wav files next to this file) -->
-  <audio id="snd-laser" src="laser.mp3" preload="auto"></audio>
-  <audio id="snd-powerup" src="powerup.mp3" preload="auto"></audio>
-  <audio id="snd-mega" src="mega.mp3" preload="auto"></audio>
-  <audio id="snd-gameover" src="gameover.mp3" preload="auto"></audio>
+  [...gameArea.querySelectorAll(".bug, .powerup, .screen-flash")].forEach(el =>
+    el.remove()
+  );
 
-  <script src="script.js"></script>
-</body>
-</html>
+  doublePointsActive = false;
+  freezeActive = false;
+  if (powerupTimeout) {
+    clearTimeout(powerupTimeout);
+    powerupTimeout = null;
+  }
+}
+
+function startGame() {
+  if (gameRunning) return;
+
+  gameRunning = true;
+  resetGame();
+  startBtn.classList.add("hidden");
+  hideMessage();
+
+  gameTickInterval = setInterval(() => {
+    if (!freezeActive) {
+      const spawnCount = Math.random() < 0.5 ? 1 : 2;
+      for (let i = 0; i < spawnCount; i++) {
+        spawnBug();
+      }
+    }
+
+    if (Math.random() < 0.18) {
+      spawnPowerup();
+    }
+  }, 850);
+
+  timerInterval = setInterval(() => {
+    timeLeft -= 1;
+    timerEl.textContent = timeLeft.toString();
+
+    if (timeLeft <= 0) {
+      endGame();
+    }
+  }, 1000);
+}
+
+function endGame() {
+  gameRunning = false;
+  clearInterval(gameTickInterval);
+  clearInterval(timerInterval);
+  gameTickInterval = null;
+  timerInterval = null;
+
+  if (powerupTimeout) {
+    clearTimeout(powerupTimeout);
+    powerupTimeout = null;
+  }
+
+  playSoundSafe(sndGameover);
+
+  const best = parseInt(localStorage.getItem("spaceBugBest") || "0", 10);
+  if (score > best) {
+    localStorage.setItem("spaceBugBest", String(score));
+    bestScoreEl.textContent = score.toString();
+  }
+
+  showMessage(
+    "Mission Complete!",
+    `You blasted <strong>${score}</strong> space bugs!`,
+    "Tap <em>Start Mission</em> to play again."
+  );
+
+  startBtn.textContent = "Play Again";
+  startBtn.classList.remove("hidden");
+}
+
+function spawnBug() {
+  const rect = gameArea.getBoundingClientRect();
+  const margin = 60;
+  const x = Math.random() * (rect.width - margin * 2) + margin;
+  const y = Math.random() * (rect.height - margin * 2) + margin;
+
+  const bug = document.createElement("div");
+  bug.className = `bug variant-${1 + Math.floor(Math.random() * 4)}`;
+  bug.style.left = `${x}px`;
+  bug.style.top = `${y}px`;
+
+  const inner = document.createElement("div");
+  inner.className = "bug-inner";
+  const face = document.createElement("span");
+  inner.appendChild(face);
+  bug.appendChild(inner);
+
+  bug.addEventListener(
+    "click",
+    () => handleBugClick(bug, x, y),
+    { passive: true }
+  );
+
+  gameArea.appendChild(bug);
+
+  setTimeout(() => {
+    bug.remove();
+  }, 4000);
+}
+
+function handleBugClick(bug, x, y) {
+  if (!gameRunning) return;
+
+  createBlastRing(x, y);
+  bug.remove();
+
+  let points = 10;
+  if (doublePointsActive) points *= 2;
+  score += points;
+  scoreEl.textContent = score.toString();
+
+  playSoundSafe(sndLaser);
+  chainBlastNearby(x, y);
+}
+
+function chainBlastNearby(x, y) {
+  const radius = 70;
+  const bugs = [...gameArea.querySelectorAll(".bug")];
+
+  const gaRect = gameArea.getBoundingClientRect();
+
+  bugs.forEach(bug => {
+    const rect = bug.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2 - gaRect.left;
+    const centerY = rect.top + rect.height / 2 - gaRect.top;
+
+    const dx = centerX - x;
+    const dy = centerY - y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    if (dist < radius) {
+      bug.remove();
+      let points = 5;
+      if (doublePointsActive) points *= 2;
+      score += points;
+      scoreEl.textContent = score.toString();
+    }
+  });
+}
+
+function createBlastRing(x, y) {
+  const ring = document.createElement("div");
+  ring.className = "blast-ring";
+  ring.style.left = `${x - 40}px`;
+  ring.style.top = `${y - 40}px`;
+  gameArea.appendChild(ring);
+
+  setTimeout(() => ring.remove(), 350);
+}
+
+function spawnPowerup() {
+  const existing = gameArea.querySelectorAll(".powerup").length;
+  if (existing >= 2) return;
+
+  const rect = gameArea.getBoundingClientRect();
+  const margin = 70;
+  const x = Math.random() * (rect.width - margin * 2) + margin;
+  const y = Math.random() * (rect.height - margin * 2) + margin;
+
+  const types = ["freeze", "double", "mega"];
+  const type = types[Math.floor(Math.random() * types.length)];
+
+  const el = document.createElement("div");
+  el.className = `powerup ${type}`;
+  el.dataset.type = type;
+
+  if (type === "freeze") el.textContent = "Freeze";
+  if (type === "double") el.textContent = "2x";
+  if (type === "mega") el.textContent = "Mega";
+
+  el.style.left = `${x}px`;
+  el.style.top = `${y}px`;
+
+  el.addEventListener(
+    "click",
+    () => {
+      if (!gameRunning) return;
+      activatePowerup(type);
+      el.remove();
+    },
+    { passive: true }
+  );
+
+  gameArea.appendChild(el);
+
+  setTimeout(() => el.remove(), 5000);
+}
+
+function activatePowerup(type) {
+  if (type === "freeze") applyFreezePowerup();
+  if (type === "double") applyDoublePointsPowerup();
+  if (type === "mega") applyMegaBlastPowerup();
+}
+
+function applyFreezePowerup() {
+  freezeActive = true;
+  playSoundSafe(sndPowerup);
+
+  if (powerupTimeout) clearTimeout(powerupTimeout);
+  powerupTimeout = setTimeout(() => {
+    freezeActive = false;
+    powerupTimeout = null;
+  }, 3500);
+}
+
+function applyDoublePointsPowerup() {
+  doublePointsActive = true;
+  playSoundSafe(sndPowerup);
+
+  if (powerupTimeout) clearTimeout(powerupTimeout);
+  powerupTimeout = setTimeout(() => {
+    doublePointsActive = false;
+    powerupTimeout = null;
+  }, 6000);
+}
+
+function applyMegaBlastPowerup() {
+  playSoundSafe(sndMega);
+
+  const flash = document.createElement("div");
+  flash.className = "screen-flash";
+  gameArea.appendChild(flash);
+  setTimeout(() => flash.remove(), 400);
+
+  const bugs = [...gameArea.querySelectorAll(".bug")];
+  let gained = 0;
+  bugs.forEach(bug => {
+    bug.remove();
+    gained += doublePointsActive ? 6 : 3;
+  });
+
+  score += gained;
+  scoreEl.textContent = score.toString();
+}
+
+function showMessage(title, body, footer) {
+  messageEl.innerHTML = `
+    <div class="message-title">${title}</div>
+    <div class="message-body">${body}</div>
+    <div class="message-footer">${footer}</div>
+  `;
+  messageEl.classList.remove("hidden");
+}
+
+function hideMessage() {
+  messageEl.classList.add("hidden");
+}
+
+function playSoundSafe(audio) {
+  if (!audio) return;
+  try {
+    audio.currentTime = 0;
+    audio.play().catch(() => {});
+  } catch {
+    // ignore
+  }
+}
+
+startBtn.addEventListener("click", startGame);

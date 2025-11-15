@@ -299,8 +299,6 @@ body {
   touch-action: manipulation;
 }
 
-/* Individual power-up looks */
-
 .powerup.freeze {
   background: radial-gradient(circle at 20% 20%, #e0f2fe, #0ea5e9);
   color: #0f172a;
@@ -325,19 +323,19 @@ body {
   }
 }
 
-/* Weapon visual */
+/* MOVABLE BLASTER + ENERGY BAR */
 
 .weapon-decor {
   position: absolute;
-  bottom: 8px;
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: 10px;
+  left: 0;              /* JS will control left */
+  width: 160px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  z-index: 1;
-  pointer-events: none;
+  z-index: 3;
+  pointer-events: none; /* kids can’t grab the tablet here */
 }
 
 .raygun {
@@ -377,12 +375,34 @@ body {
   background: linear-gradient(135deg, #0f172a, #1f2937);
 }
 
+/* Energy bar “track” that moves with the blaster */
+
 .weapon-glow {
-  width: 70px;
-  height: 16px;
+  width: 140px;
+  height: 12px;
   border-radius: 999px;
-  background: radial-gradient(circle, rgba(129, 140, 248, 0.8), transparent);
-  filter: blur(2px);
+  background: linear-gradient(
+    to right,
+    rgba(56, 189, 248, 0.4),
+    rgba(129, 140, 248, 0.95),
+    rgba(56, 189, 248, 0.4)
+  );
+  filter: blur(1px);
+  box-shadow:
+    0 0 12px rgba(56, 189, 248, 0.9),
+    0 0 24px rgba(129, 140, 248, 0.7);
+  animation: glow-pulse 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes glow-pulse {
+  from {
+    opacity: 0.7;
+    transform: scaleX(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1.04);
+  }
 }
 
 /* Start button & message */
