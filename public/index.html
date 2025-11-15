@@ -2,615 +2,70 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Bug Blaster – Power-Up Edition</title>
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: system-ui, sans-serif;
-    }
-
-    body {
-      background: radial-gradient(circle at top, #222 0, #050608 60%);
-      color: #f9f9f9;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      min-height: 100vh;
-      padding-top: 24px;
-    }
-
-    h1 {
-      margin-bottom: 4px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      font-size: 24px;
-    }
-
-    .subtitle {
-      font-size: 14px;
-      opacity: 0.8;
-      margin-bottom: 10px;
-      text-align: center;
-    }
-
-    #gameWrapper {
-      position: relative;
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
-    }
-
-    canvas {
-      background: linear-gradient(to bottom, #111928, #050608);
-      display: block;
-    }
-
-    #hud {
-      margin-top: 10px;
-      display: flex;
-      gap: 16px;
-      align-items: center;
-      font-size: 14px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-
-    .badge {
-      padding: 4px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      background: rgba(15, 23, 42, 0.9);
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      cursor: default;
-    }
-
-    .badge.clickable {
-      cursor: pointer;
-      transition: background 0.15s ease, transform 0.1s ease;
-    }
-
-    .badge.clickable:hover {
-      background: rgba(30, 64, 175, 0.9);
-      transform: translateY(-1px);
-    }
-
-    .dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 999px;
-    }
-
-    #blasterLevelText {
-      font-weight: 600;
-    }
-
-    #blasterMessage {
-      font-size: 12px;
-      opacity: 0.8;
-      margin-top: 4px;
-      text-align: center;
-      min-height: 16px;
-    }
-
-    #controlsHint {
-      margin-top: 10px;
-      font-size: 12px;
-      opacity: 0.7;
-      text-align: center;
-    }
-
-    #overlay {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(15, 23, 42, 0.92);
-      color: #f9fafb;
-      flex-direction: column;
-      gap: 10px;
-      z-index: 10;
-      text-align: center;
-      padding: 16px;
-    }
-
-    #overlay button {
-      padding: 8px 18px;
-      border-radius: 999px;
-      border: none;
-      background: linear-gradient(135deg, #22c55e, #a3e635);
-      color: #022c22;
-      font-weight: 600;
-      cursor: pointer;
-      box-shadow: 0 0 12px rgba(34, 197, 94, 0.5);
-    }
-
-    #overlay button:hover {
-      filter: brightness(1.05);
-      transform: translateY(-1px);
-    }
-
-    #overlayTitle {
-      font-size: 16px;
-      font-weight: 600;
-    }
-
-    #overlayText {
-      font-size: 13px;
-      opacity: 0.85;
-    }
-  </style>
+  <title>Space Bug Blaster</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <h1>Bug Blaster</h1>
-  <div class="subtitle">
-    Move left/right • Space or click to fire • Blast as many bugs as you can before they reach you!
-  </div>
-
-  <div id="gameWrapper">
-    <canvas id="game" width="600" height="400"></canvas>
-    <div id="overlay">
-      <div id="overlayTitle">Ready to blast?</div>
-      <div id="overlayText">
-        Use <strong>← →</strong> or <strong>A / D</strong> to move, <strong>Space</strong> or click to fire.
+  <div class="game-page">
+    <header class="hud">
+      <div class="hud-section">
+        <span class="hud-label">Score:</span>
+        <span id="score" class="hud-value">0</span>
       </div>
-      <button id="startBtn">Start Game</button>
-    </div>
+      <div class="hud-section">
+        <span class="hud-label">Time:</span>
+        <span id="timer" class="hud-value">30</span>s
+      </div>
+      <div class="hud-section">
+        <span class="hud-label">Best:</span>
+        <span id="best-score" class="hud-value">0</span>
+      </div>
+    </header>
+
+    <main class="game-wrapper">
+      <div id="game-area" class="game-area">
+        <div class="space-overlay"></div>
+
+        <div id="message" class="message hidden"></div>
+
+        <button id="start-btn" class="start-button">
+          Start Mission
+        </button>
+
+        <div class="weapon-decor">
+          <div class="raygun">
+            <div class="raygun-barrel"></div>
+            <div class="raygun-body"></div>
+            <div class="raygun-handle"></div>
+          </div>
+          <div class="weapon-glow"></div>
+        </div>
+      </div>
+    </main>
+
+    <section class="instructions">
+      <h2>How to Play</h2>
+      <ul>
+        <li>Tap the <strong>space bugs</strong> to blast them.</li>
+        <li>Grab <strong>power-ups</strong>:
+          <ul>
+            <li><span class="badge freeze">Freeze</span> – pause new bugs.</li>
+            <li><span class="badge double">2x</span> – double points.</li>
+            <li><span class="badge mega">Mega</span> – blast all bugs on screen.</li>
+          </ul>
+        </li>
+        <li>You have <strong>30 seconds</strong>. Try to beat the best score!</li>
+      </ul>
+    </section>
   </div>
 
-  <div id="hud">
-    <div class="badge">
-      <span class="dot" style="background:#22c55e;"></span>
-      <span>Score: <span id="score">0</span></span>
-    </div>
-    <div class="badge">
-      <span class="dot" style="background:#f97316;"></span>
-      <span>Missed: <span id="missed">0</span> / 5</span>
-    </div>
-    <div class="badge">
-      <span class="dot" id="blasterDot" style="background:#22d3ee;"></span>
-      <span id="blasterLevelText">Blaster Lv.1 – Starter Spray</span>
-    </div>
-    <div class="badge clickable" id="soundBadge">
-      <span class="dot" id="soundDot" style="background:#22c55e;"></span>
-      <span id="soundLabel">Sound: On</span>
-    </div>
-  </div>
+  <!-- Sounds (add the .mp3/.wav files next to this file) -->
+  <audio id="snd-laser" src="laser.mp3" preload="auto"></audio>
+  <audio id="snd-powerup" src="powerup.mp3" preload="auto"></audio>
+  <audio id="snd-mega" src="mega.mp3" preload="auto"></audio>
+  <audio id="snd-gameover" src="gameover.mp3" preload="auto"></audio>
 
-  <div id="blasterMessage"></div>
-
-  <div id="controlsHint">
-    Tip: Keep your combo going — higher score unlocks stronger blasters with new colors and bigger shots.
-  </div>
-
-  <script>
-    const canvas = document.getElementById("game");
-    const ctx = canvas.getContext("2d");
-
-    const scoreEl = document.getElementById("score");
-    const missedEl = document.getElementById("missed");
-    const blasterLevelText = document.getElementById("blasterLevelText");
-    const blasterDot = document.getElementById("blasterDot");
-    const blasterMessage = document.getElementById("blasterMessage");
-    const overlay = document.getElementById("overlay");
-    const overlayTitle = document.getElementById("overlayTitle");
-    const overlayText = document.getElementById("overlayText");
-    const startBtn = document.getElementById("startBtn");
-    const soundBadge = document.getElementById("soundBadge");
-    const soundDot = document.getElementById("soundDot");
-    const soundLabel = document.getElementById("soundLabel");
-
-    const width = canvas.width;
-    const height = canvas.height;
-
-    // -------- SOUND ENGINE (Web Audio, procedural beeps) --------
-    let audioCtx = null;
-    let soundEnabled = true;
-
-    function initAudio() {
-      if (!audioCtx) {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        if (!AudioContext) return; // Old browser fallback
-        audioCtx = new AudioContext();
-      }
-      if (audioCtx.state === "suspended") {
-        audioCtx.resume();
-      }
-    }
-
-    function playTone(startFreq, endFreq, duration, startGain) {
-      if (!soundEnabled || !audioCtx) return;
-      const ctx = audioCtx;
-      const now = ctx.currentTime;
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
-      osc.frequency.setValueAtTime(startFreq, now);
-      osc.frequency.linearRampToValueAtTime(endFreq, now + duration);
-
-      gain.gain.setValueAtTime(startGain, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-
-      osc.type = "square";
-      osc.start(now);
-      osc.stop(now + duration);
-    }
-
-    function playSound(kind) {
-      if (!soundEnabled) return;
-      if (!audioCtx) return;
-
-      switch (kind) {
-        case "shoot":
-          // Quick high blip
-          playTone(800, 600, 0.07, 0.2);
-          break;
-        case "hit":
-          // Short pop
-          playTone(500, 120, 0.12, 0.25);
-          break;
-        case "level":
-          // Rising "power-up"
-          playTone(500, 900, 0.18, 0.18);
-          break;
-        case "miss":
-          // Soft low thud
-          playTone(220, 160, 0.08, 0.12);
-          break;
-        case "gameover":
-          // Descending sad tone
-          playTone(260, 80, 0.4, 0.15);
-          break;
-      }
-    }
-
-    soundBadge.addEventListener("click", () => {
-      soundEnabled = !soundEnabled;
-      soundDot.style.background = soundEnabled ? "#22c55e" : "#ef4444";
-      soundLabel.textContent = soundEnabled ? "Sound: On" : "Sound: Off";
-      if (soundEnabled) {
-        initAudio();
-        playSound("level"); // a tiny confirmation tone
-      }
-    });
-
-    // -------- BLASTER LEVELS --------
-    const blasterLevels = [
-      {
-        name: "Blaster Lv.1 – Starter Spray",
-        color: "#22d3ee",
-        shotColor: "#67e8f9",
-        bodyWidth: 60,
-        barrelWidth: 20,
-        fireDelay: 260,
-        message: "Just getting started – keep blasting to power up!"
-      },
-      {
-        name: "Blaster Lv.2 – Neon Burst",
-        color: "#a855f7",
-        shotColor: "#e879f9",
-        bodyWidth: 80,
-        barrelWidth: 26,
-        fireDelay: 200,
-        message: "Nice! Your shots are wider and recharge faster."
-      },
-      {
-        name: "Blaster Lv.3 – Solar Cannon",
-        color: "#fbbf24",
-        shotColor: "#facc15",
-        bodyWidth: 96,
-        barrelWidth: 32,
-        fireDelay: 150,
-        message: "Max power! Huge shots, rapid fire. Melt those bugs. 🔥"
-      }
-    ];
-
-    const levelThresholds = [0, 15, 35];
-    let currentLevelIndex = 0;
-
-    function updateBlasterLevel(score) {
-      let newIndex = currentLevelIndex;
-
-      if (score >= levelThresholds[2]) {
-        newIndex = 2;
-      } else if (score >= levelThresholds[1]) {
-        newIndex = 1;
-      } else {
-        newIndex = 0;
-      }
-
-      if (newIndex !== currentLevelIndex) {
-        currentLevelIndex = newIndex;
-        const lvl = blasterLevels[currentLevelIndex];
-        blasterLevelText.textContent = lvl.name;
-        blasterDot.style.background = lvl.color;
-        blasterMessage.textContent = lvl.message;
-        playSound("level");
-      }
-    }
-
-    // -------- GAME STATE --------
-    let player = {
-      x: width / 2,
-      y: height - 40,
-      speed: 4
-    };
-
-    let bullets = [];
-    let bugs = [];
-    let keys = {};
-    let score = 0;
-    let missed = 0;
-    let lastShotTime = 0;
-    let gameRunning = false;
-    let lastSpawnTime = 0;
-
-    function resetGame() {
-      score = 0;
-      missed = 0;
-      bullets = [];
-      bugs = [];
-      lastShotTime = 0;
-      lastSpawnTime = 0;
-      player.x = width / 2;
-      currentLevelIndex = 0;
-      const lvl = blasterLevels[currentLevelIndex];
-      blasterLevelText.textContent = lvl.name;
-      blasterDot.style.background = lvl.color;
-      blasterMessage.textContent = lvl.message;
-      scoreEl.textContent = score;
-      missedEl.textContent = missed;
-    }
-
-    // -------- INPUT --------
-    window.addEventListener("keydown", (e) => {
-      keys[e.key.toLowerCase()] = true;
-      if (e.key === " ") e.preventDefault();
-    });
-
-    window.addEventListener("keyup", (e) => {
-      keys[e.key.toLowerCase()] = false;
-    });
-
-    canvas.addEventListener("mousedown", () => {
-      if (gameRunning) {
-        shoot();
-      }
-    });
-
-    function handleMovement() {
-      if (keys["arrowleft"] || keys["a"]) {
-        player.x -= player.speed;
-      }
-      if (keys["arrowright"] || keys["d"]) {
-        player.x += player.speed;
-      }
-      player.x = Math.max(30, Math.min(width - 30, player.x));
-
-      if (keys[" "]) {
-        shoot();
-      }
-    }
-
-    function shoot() {
-      const now = performance.now();
-      const lvl = blasterLevels[currentLevelIndex];
-
-      if (now - lastShotTime < lvl.fireDelay) return;
-      lastShotTime = now;
-
-      bullets.push({
-        x: player.x,
-        y: player.y - 20,
-        vy: -6 - currentLevelIndex,
-        radius: 6 + currentLevelIndex * 2
-      });
-
-      playSound("shoot");
-    }
-
-    // -------- BUGS --------
-    function spawnBug() {
-      const x = 20 + Math.random() * (width - 40);
-      const speed = 1.3 + Math.random() * 1.2 + currentLevelIndex * 0.1;
-      bugs.push({
-        x,
-        y: -20,
-        vy: speed,
-        radius: 12 + Math.random() * 6
-      });
-    }
-
-    function updateBugs(delta) {
-      for (let bug of bugs) {
-        bug.y += bug.vy * delta;
-      }
-
-      bugs = bugs.filter((bug) => {
-        if (bug.y - bug.radius > height) {
-          missed++;
-          missedEl.textContent = missed;
-          playSound("miss");
-          return false;
-        }
-        return true;
-      });
-
-      if (missed >= 5) {
-        endGame();
-      }
-    }
-
-    function updateBullets(delta) {
-      for (let b of bullets) {
-        b.y += b.vy * delta;
-      }
-      bullets = bullets.filter((b) => b.y + b.radius > -10);
-    }
-
-    function checkCollisions() {
-      for (let i = bugs.length - 1; i >= 0; i--) {
-        const bug = bugs[i];
-        for (let j = bullets.length - 1; j >= 0; j--) {
-          const b = bullets[j];
-          const dx = bug.x - b.x;
-          const dy = bug.y - b.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < bug.radius + b.radius) {
-            bugs.splice(i, 1);
-            bullets.splice(j, 1);
-            score++;
-            scoreEl.textContent = score;
-            updateBlasterLevel(score);
-            playSound("hit");
-            break;
-          }
-        }
-      }
-    }
-
-    // -------- RENDERING --------
-    function drawBackground() {
-      // simple moving starfield
-      ctx.fillStyle = "#020617";
-      ctx.fillRect(0, 0, width, height);
-      const time = Date.now() * 0.002;
-      for (let i = 0; i < 60; i++) {
-        const x = (i * 97) % width;
-        const y = ((i * 53 + time * 40) % height + height) % height;
-        const size = (i % 3) + 1;
-        const alpha = 0.3 + (i % 4) * 0.1;
-        ctx.fillStyle = `rgba(148,163,184,${alpha})`;
-        ctx.fillRect(x, y, size, size);
-      }
-    }
-
-    function drawPlayer() {
-      const lvl = blasterLevels[currentLevelIndex];
-
-      ctx.save();
-      ctx.shadowColor = lvl.color;
-      ctx.shadowBlur = 20;
-
-      const bodyWidth = lvl.bodyWidth;
-      const bodyHeight = 18;
-      ctx.fillStyle = lvl.color;
-      ctx.fillRect(
-        player.x - bodyWidth / 2,
-        player.y - bodyHeight / 2,
-        bodyWidth,
-        bodyHeight
-      );
-
-      ctx.fillStyle = "#e5e7eb";
-      const barrelWidth = lvl.barrelWidth;
-      const barrelHeight = 12;
-      ctx.fillRect(
-        player.x - barrelWidth / 2,
-        player.y - bodyHeight / 2 - barrelHeight,
-        barrelWidth,
-        barrelHeight
-      );
-
-      ctx.restore();
-    }
-
-    function drawBullets() {
-      const lvl = blasterLevels[currentLevelIndex];
-      ctx.fillStyle = lvl.shotColor;
-      for (let b of bullets) {
-        ctx.beginPath();
-        ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-
-    function drawBugs() {
-      for (let bug of bugs) {
-        const gradient = ctx.createRadialGradient(
-          bug.x - 3,
-          bug.y - 4,
-          2,
-          bug.x,
-          bug.y,
-          bug.radius
-        );
-        gradient.addColorStop(0, "#f97316");
-        gradient.addColorStop(1, "#b91c1c");
-
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.arc(bug.x, bug.y, bug.radius, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.strokeStyle = "#facc15";
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(bug.x - 4, bug.y - bug.radius + 2);
-        ctx.lineTo(bug.x - 8, bug.y - bug.radius - 6);
-        ctx.moveTo(bug.x + 4, bug.y - bug.radius + 2);
-        ctx.lineTo(bug.x + 8, bug.y - bug.radius - 6);
-        ctx.stroke();
-      }
-    }
-
-    // -------- GAME LOOP --------
-    let lastTime = 0;
-
-    function loop(timestamp) {
-      if (!gameRunning) return;
-      if (!lastTime) lastTime = timestamp;
-      const delta = (timestamp - lastTime) / 16.67;
-      lastTime = timestamp;
-
-      drawBackground();
-      handleMovement();
-      updateBullets(delta);
-      updateBugs(delta);
-      checkCollisions();
-
-      const spawnInterval = 900 - currentLevelIndex * 80;
-      if (timestamp - lastSpawnTime > spawnInterval) {
-        spawnBug();
-        lastSpawnTime = timestamp;
-      }
-
-      drawBullets();
-      drawBugs();
-      drawPlayer();
-
-      requestAnimationFrame(loop);
-    }
-
-    function startGame() {
-      initAudio();
-      resetGame();
-      overlay.style.display = "none";
-      gameRunning = true;
-      lastTime = 0;
-      requestAnimationFrame(loop);
-    }
-
-    function endGame() {
-      gameRunning = false;
-      overlay.style.display = "flex";
-      overlayTitle.textContent = "Game Over!";
-      overlayText.textContent = "Final score: " + score + " • Click Start to try again.";
-      playSound("gameover");
-    }
-
-    startBtn.addEventListener("click", startGame);
-
-    // Initial message
-    blasterMessage.textContent = blasterLevels[0].message;
-  </script>
+  <script src="script.js"></script>
 </body>
 </html>
