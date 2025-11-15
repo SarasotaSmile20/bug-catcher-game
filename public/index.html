@@ -2,720 +2,615 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Space Bug Blaster</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bug Blaster – Power-Up Edition</title>
   <style>
-    :root {
-      --bg: #040816;
-      --accent: #5df2ff;
-      --accent-soft: rgba(93, 242, 255, 0.15);
-      --danger: #ff6b81;
-      --text: #f4f7ff;
-      --panel: rgba(7, 16, 36, 0.9);
-      --font-main: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-        Roboto, sans-serif;
-    }
-
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
+      font-family: system-ui, sans-serif;
     }
 
     body {
-      min-height: 100vh;
-      background: radial-gradient(circle at top, #111a3f 0, #02030b 55%, #000 100%);
-      color: var(--text);
-      font-family: var(--font-main);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 1.5rem;
-    }
-
-    .wrapper {
-      width: 100%;
-      max-width: 960px;
-      margin: 0 auto;
-    }
-
-    h1 {
-      text-align: center;
-      letter-spacing: 0.12em;
-      font-size: clamp(1.7rem, 2.3vw, 2.2rem);
-      text-transform: uppercase;
-      color: var(--accent);
-      text-shadow: 0 0 12px rgba(93, 242, 255, 0.7);
-      margin-bottom: 0.3rem;
-    }
-
-    .subtitle {
-      text-align: center;
-      font-size: 0.9rem;
-      opacity: 0.8;
-      margin-bottom: 0.75rem;
-    }
-
-    .hud {
-      display: flex;
-      justify-content: center;
-      gap: 1.5rem;
-      margin-bottom: 0.75rem;
-      font-size: 0.95rem;
-    }
-
-    .hud span.value {
-      font-weight: 600;
-      color: var(--accent);
-      text-shadow: 0 0 6px rgba(93, 242, 255, 0.6);
-    }
-
-    .game-shell {
-      position: relative;
-      border-radius: 14px;
-      padding: 0.75rem;
-      background: linear-gradient(135deg, #151b33, #050812);
-      box-shadow:
-        0 0 0 1px rgba(255, 255, 255, 0.04),
-        0 20px 50px rgba(0, 0, 0, 0.8);
-    }
-
-    canvas {
-      display: block;
-      width: 100%;
-      height: auto;
-      border-radius: 10px;
-      background: radial-gradient(circle at top, #111827 0, #030712 55%, #000 100%);
-    }
-
-    .controls {
-      display: flex;
-      justify-content: center;
-      gap: 0.65rem;
-      margin-top: 0.6rem;
-    }
-
-    .controls button {
-      background: var(--panel);
-      border: 1px solid rgba(93, 242, 255, 0.3);
-      color: var(--text);
-      border-radius: 999px;
-      padding: 0.45rem 0.9rem;
-      font-size: 1.1rem;
-      cursor: pointer;
-      min-width: 56px;
-      box-shadow: 0 0 10px rgba(93, 242, 255, 0.2);
-      transition: background 0.15s ease, transform 0.1s ease,
-        box-shadow 0.15s ease;
-      backdrop-filter: blur(6px);
-    }
-
-    .controls button:active {
-      transform: translateY(1px) scale(0.98);
-      box-shadow: 0 0 4px rgba(93, 242, 255, 0.3);
-      background: rgba(11, 22, 55, 0.95);
-    }
-
-    .controls-label {
-      text-align: center;
-      font-size: 0.75rem;
-      opacity: 0.7;
-      margin-top: 0.3rem;
-    }
-
-    .overlay {
-      position: absolute;
-      inset: 0.75rem;
-      border-radius: 10px;
-      background: radial-gradient(circle at top, rgba(19, 40, 85, 0.9), rgba(3, 8, 22, 0.98));
-      border: 1px solid rgba(93, 242, 255, 0.25);
+      background: radial-gradient(circle at top, #222 0, #050608 60%);
+      color: #f9f9f9;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      padding-top: 24px;
+    }
+
+    h1 {
+      margin-bottom: 4px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 24px;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      opacity: 0.8;
+      margin-bottom: 10px;
       text-align: center;
-      padding: 1.5rem 1.2rem;
+    }
+
+    #gameWrapper {
+      position: relative;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
+    }
+
+    canvas {
+      background: linear-gradient(to bottom, #111928, #050608);
+      display: block;
+    }
+
+    #hud {
+      margin-top: 10px;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      font-size: 14px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .badge {
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(15, 23, 42, 0.9);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: default;
+    }
+
+    .badge.clickable {
+      cursor: pointer;
+      transition: background 0.15s ease, transform 0.1s ease;
+    }
+
+    .badge.clickable:hover {
+      background: rgba(30, 64, 175, 0.9);
+      transform: translateY(-1px);
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+    }
+
+    #blasterLevelText {
+      font-weight: 600;
+    }
+
+    #blasterMessage {
+      font-size: 12px;
+      opacity: 0.8;
+      margin-top: 4px;
+      text-align: center;
+      min-height: 16px;
+    }
+
+    #controlsHint {
+      margin-top: 10px;
+      font-size: 12px;
+      opacity: 0.7;
+      text-align: center;
+    }
+
+    #overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(15, 23, 42, 0.92);
+      color: #f9fafb;
+      flex-direction: column;
+      gap: 10px;
       z-index: 10;
+      text-align: center;
+      padding: 16px;
     }
 
-    .overlay.hidden {
-      display: none;
-    }
-
-    .overlay h2 {
-      font-size: 1.4rem;
-      margin-bottom: 0.4rem;
-    }
-
-    .overlay p {
-      max-width: 360px;
-      font-size: 0.9rem;
-      opacity: 0.85;
-      margin-bottom: 1rem;
-    }
-
-    .overlay .stat-line {
-      font-size: 0.9rem;
-      margin-bottom: 0.45rem;
-    }
-
-    .overlay .stat-label {
-      opacity: 0.75;
-      margin-right: 0.3rem;
-    }
-
-    .btn-primary {
-      background: linear-gradient(135deg, #35d3ff, #7c5bff);
+    #overlay button {
+      padding: 8px 18px;
       border-radius: 999px;
       border: none;
-      color: #020617;
-      padding: 0.6rem 1.4rem;
-      font-size: 0.95rem;
+      background: linear-gradient(135deg, #22c55e, #a3e635);
+      color: #022c22;
       font-weight: 600;
       cursor: pointer;
-      box-shadow:
-        0 0 18px rgba(44, 202, 255, 0.7),
-        0 12px 24px rgba(0, 0, 0, 0.7);
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      transition: transform 0.1s ease, box-shadow 0.15s ease, filter 0.15s ease;
+      box-shadow: 0 0 12px rgba(34, 197, 94, 0.5);
     }
 
-    .btn-primary:active {
-      transform: translateY(1px) scale(0.98);
-      box-shadow:
-        0 0 10px rgba(44, 202, 255, 0.9),
-        0 6px 15px rgba(0, 0, 0, 0.8);
-      filter: brightness(0.95);
+    #overlay button:hover {
+      filter: brightness(1.05);
+      transform: translateY(-1px);
     }
 
-    @media (max-width: 640px) {
-      .hud {
-        font-size: 0.8rem;
-        gap: 1rem;
-      }
-      .overlay {
-        inset: 0.6rem;
-        padding-inline: 1rem;
-      }
+    #overlayTitle {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    #overlayText {
+      font-size: 13px;
+      opacity: 0.85;
     }
   </style>
 </head>
 <body>
-  <div class="wrapper">
-    <h1>Space Bug Blaster</h1>
-    <p class="subtitle">Blast as many alien bugs as you can before your shields fail.</p>
+  <h1>Bug Blaster</h1>
+  <div class="subtitle">
+    Move left/right • Space or click to fire • Blast as many bugs as you can before they reach you!
+  </div>
 
-    <div class="hud">
-      <div>Score: <span id="score" class="value">0</span></div>
-      <div>Level: <span id="level" class="value">1</span></div>
-      <div>Lives: <span id="lives" class="value">3</span></div>
-    </div>
-
-    <div class="game-shell">
-      <canvas id="gameCanvas" width="800" height="600"></canvas>
-
-      <div class="overlay" id="overlay">
-        <h2 id="overlayTitle">Space Bug Blaster</h2>
-        <p id="overlayMessage">
-          Pilot, your mission is simple: keep the swarm from reaching you.
-          Move with <strong>← / →</strong> and fire with <strong>Space</strong>.
-        </p>
-        <div id="overlayStats" style="margin-bottom: 1rem; display: none;">
-          <div class="stat-line">
-            <span class="stat-label">Final Score:</span>
-            <span id="finalScore"></span>
-          </div>
-          <div class="stat-line">
-            <span class="stat-label">Highest Level:</span>
-            <span id="finalLevel"></span>
-          </div>
-        </div>
-        <button class="btn-primary" id="btnPlay">Play</button>
+  <div id="gameWrapper">
+    <canvas id="game" width="600" height="400"></canvas>
+    <div id="overlay">
+      <div id="overlayTitle">Ready to blast?</div>
+      <div id="overlayText">
+        Use <strong>← →</strong> or <strong>A / D</strong> to move, <strong>Space</strong> or click to fire.
       </div>
+      <button id="startBtn">Start Game</button>
     </div>
+  </div>
 
-    <div class="controls">
-      <button id="btnLeft">⟵</button>
-      <button id="btnShoot">⦿</button>
-      <button id="btnRight">⟶</button>
+  <div id="hud">
+    <div class="badge">
+      <span class="dot" style="background:#22c55e;"></span>
+      <span>Score: <span id="score">0</span></span>
     </div>
-    <div class="controls-label">Touch controls (mobile): move & shoot</div>
+    <div class="badge">
+      <span class="dot" style="background:#f97316;"></span>
+      <span>Missed: <span id="missed">0</span> / 5</span>
+    </div>
+    <div class="badge">
+      <span class="dot" id="blasterDot" style="background:#22d3ee;"></span>
+      <span id="blasterLevelText">Blaster Lv.1 – Starter Spray</span>
+    </div>
+    <div class="badge clickable" id="soundBadge">
+      <span class="dot" id="soundDot" style="background:#22c55e;"></span>
+      <span id="soundLabel">Sound: On</span>
+    </div>
+  </div>
+
+  <div id="blasterMessage"></div>
+
+  <div id="controlsHint">
+    Tip: Keep your combo going — higher score unlocks stronger blasters with new colors and bigger shots.
   </div>
 
   <script>
-    // --- Canvas setup --------------------------------------------------------
-    const canvas = document.getElementById("gameCanvas");
+    const canvas = document.getElementById("game");
     const ctx = canvas.getContext("2d");
 
-    // HUD elements
     const scoreEl = document.getElementById("score");
-    const levelEl = document.getElementById("level");
-    const livesEl = document.getElementById("lives");
-
-    // Overlay elements
+    const missedEl = document.getElementById("missed");
+    const blasterLevelText = document.getElementById("blasterLevelText");
+    const blasterDot = document.getElementById("blasterDot");
+    const blasterMessage = document.getElementById("blasterMessage");
     const overlay = document.getElementById("overlay");
     const overlayTitle = document.getElementById("overlayTitle");
-    const overlayMessage = document.getElementById("overlayMessage");
-    const overlayStats = document.getElementById("overlayStats");
-    const finalScoreEl = document.getElementById("finalScore");
-    const finalLevelEl = document.getElementById("finalLevel");
-    const btnPlay = document.getElementById("btnPlay");
+    const overlayText = document.getElementById("overlayText");
+    const startBtn = document.getElementById("startBtn");
+    const soundBadge = document.getElementById("soundBadge");
+    const soundDot = document.getElementById("soundDot");
+    const soundLabel = document.getElementById("soundLabel");
 
-    // Touch buttons
-    const btnLeft = document.getElementById("btnLeft");
-    const btnRight = document.getElementById("btnRight");
-    const btnShoot = document.getElementById("btnShoot");
+    const width = canvas.width;
+    const height = canvas.height;
 
-    // --- Game state ---------------------------------------------------------
-    const state = {
-      running: false,
-      gameOver: false,
-      score: 0,
-      level: 1,
-      lives: 3,
-      lastShotTime: 0,
-      lastFrameTime: 0,
-      keys: { left: false, right: false, shoot: false },
-      bugs: [],
-      bullets: [],
-    };
+    // -------- SOUND ENGINE (Web Audio, procedural beeps) --------
+    let audioCtx = null;
+    let soundEnabled = true;
 
-    const PLAYER = {
-      x: canvas.width / 2,
-      y: canvas.height - 60,
-      width: 48,
-      height: 20,
-      speed: 6,
-    };
-
-    const BULLET_SPEED = 10;
-    const BUG_DROP_DISTANCE = 20;
-    const BASE_BUG_SPEED = 0.8;
-
-    // --- Utility ------------------------------------------------------------
-    function clamp(value, min, max) {
-      return Math.max(min, Math.min(max, value));
+    function initAudio() {
+      if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return; // Old browser fallback
+        audioCtx = new AudioContext();
+      }
+      if (audioCtx.state === "suspended") {
+        audioCtx.resume();
+      }
     }
+
+    function playTone(startFreq, endFreq, duration, startGain) {
+      if (!soundEnabled || !audioCtx) return;
+      const ctx = audioCtx;
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.frequency.setValueAtTime(startFreq, now);
+      osc.frequency.linearRampToValueAtTime(endFreq, now + duration);
+
+      gain.gain.setValueAtTime(startGain, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+      osc.type = "square";
+      osc.start(now);
+      osc.stop(now + duration);
+    }
+
+    function playSound(kind) {
+      if (!soundEnabled) return;
+      if (!audioCtx) return;
+
+      switch (kind) {
+        case "shoot":
+          // Quick high blip
+          playTone(800, 600, 0.07, 0.2);
+          break;
+        case "hit":
+          // Short pop
+          playTone(500, 120, 0.12, 0.25);
+          break;
+        case "level":
+          // Rising "power-up"
+          playTone(500, 900, 0.18, 0.18);
+          break;
+        case "miss":
+          // Soft low thud
+          playTone(220, 160, 0.08, 0.12);
+          break;
+        case "gameover":
+          // Descending sad tone
+          playTone(260, 80, 0.4, 0.15);
+          break;
+      }
+    }
+
+    soundBadge.addEventListener("click", () => {
+      soundEnabled = !soundEnabled;
+      soundDot.style.background = soundEnabled ? "#22c55e" : "#ef4444";
+      soundLabel.textContent = soundEnabled ? "Sound: On" : "Sound: Off";
+      if (soundEnabled) {
+        initAudio();
+        playSound("level"); // a tiny confirmation tone
+      }
+    });
+
+    // -------- BLASTER LEVELS --------
+    const blasterLevels = [
+      {
+        name: "Blaster Lv.1 – Starter Spray",
+        color: "#22d3ee",
+        shotColor: "#67e8f9",
+        bodyWidth: 60,
+        barrelWidth: 20,
+        fireDelay: 260,
+        message: "Just getting started – keep blasting to power up!"
+      },
+      {
+        name: "Blaster Lv.2 – Neon Burst",
+        color: "#a855f7",
+        shotColor: "#e879f9",
+        bodyWidth: 80,
+        barrelWidth: 26,
+        fireDelay: 200,
+        message: "Nice! Your shots are wider and recharge faster."
+      },
+      {
+        name: "Blaster Lv.3 – Solar Cannon",
+        color: "#fbbf24",
+        shotColor: "#facc15",
+        bodyWidth: 96,
+        barrelWidth: 32,
+        fireDelay: 150,
+        message: "Max power! Huge shots, rapid fire. Melt those bugs. 🔥"
+      }
+    ];
+
+    const levelThresholds = [0, 15, 35];
+    let currentLevelIndex = 0;
+
+    function updateBlasterLevel(score) {
+      let newIndex = currentLevelIndex;
+
+      if (score >= levelThresholds[2]) {
+        newIndex = 2;
+      } else if (score >= levelThresholds[1]) {
+        newIndex = 1;
+      } else {
+        newIndex = 0;
+      }
+
+      if (newIndex !== currentLevelIndex) {
+        currentLevelIndex = newIndex;
+        const lvl = blasterLevels[currentLevelIndex];
+        blasterLevelText.textContent = lvl.name;
+        blasterDot.style.background = lvl.color;
+        blasterMessage.textContent = lvl.message;
+        playSound("level");
+      }
+    }
+
+    // -------- GAME STATE --------
+    let player = {
+      x: width / 2,
+      y: height - 40,
+      speed: 4
+    };
+
+    let bullets = [];
+    let bugs = [];
+    let keys = {};
+    let score = 0;
+    let missed = 0;
+    let lastShotTime = 0;
+    let gameRunning = false;
+    let lastSpawnTime = 0;
 
     function resetGame() {
-      state.score = 0;
-      state.level = 1;
-      state.lives = 3;
-      state.gameOver = false;
-      PLAYER.x = canvas.width / 2;
-      state.bullets = [];
-      createBugWave();
-      updateHud();
-      hideOverlay();
-      state.running = true;
-      state.lastFrameTime = performance.now();
-      requestAnimationFrame(loop);
+      score = 0;
+      missed = 0;
+      bullets = [];
+      bugs = [];
+      lastShotTime = 0;
+      lastSpawnTime = 0;
+      player.x = width / 2;
+      currentLevelIndex = 0;
+      const lvl = blasterLevels[currentLevelIndex];
+      blasterLevelText.textContent = lvl.name;
+      blasterDot.style.background = lvl.color;
+      blasterMessage.textContent = lvl.message;
+      scoreEl.textContent = score;
+      missedEl.textContent = missed;
     }
 
-    function createBugWave() {
-      state.bugs = [];
-      const rows = 2 + state.level; // more rows each level
-      const cols = 7;
-      const paddingX = 50;
-      const paddingY = 50;
-      const spacingX = (canvas.width - paddingX * 2) / (cols - 1);
-      const spacingY = 40;
-
-      for (let row = 0; row < rows; row++) {
-        for (let col = 0; col < cols; col++) {
-          state.bugs.push({
-            x: paddingX + col * spacingX,
-            y: paddingY + row * spacingY,
-            width: 30,
-            height: 22,
-            vx: BASE_BUG_SPEED + state.level * 0.15,
-          });
-        }
-      }
-    }
-
-    function updateHud() {
-      scoreEl.textContent = state.score;
-      levelEl.textContent = state.level;
-      livesEl.textContent = state.lives;
-    }
-
-    function showOverlay({ title, message, showStats = false }) {
-      overlayTitle.textContent = title;
-      overlayMessage.innerHTML = message;
-      overlayStats.style.display = showStats ? "block" : "none";
-      if (showStats) {
-        finalScoreEl.textContent = state.score;
-        finalLevelEl.textContent = state.level;
-      }
-      overlay.classList.remove("hidden");
-    }
-
-    function hideOverlay() {
-      overlay.classList.add("hidden");
-    }
-
-    function handleGameOver() {
-      state.running = false;
-      state.gameOver = true;
-      showOverlay({
-        title: "Game Over",
-        message:
-          "The swarm breached your shields. But the galaxy loves a comeback.",
-        showStats: true,
-      });
-    }
-
-    function nextLevel() {
-      state.level++;
-      state.bullets = [];
-      createBugWave();
-      updateHud();
-    }
-
-    // --- Input handling -----------------------------------------------------
+    // -------- INPUT --------
     window.addEventListener("keydown", (e) => {
-      if (e.code === "ArrowLeft" || e.code === "KeyA") {
-        state.keys.left = true;
-      } else if (e.code === "ArrowRight" || e.code === "KeyD") {
-        state.keys.right = true;
-      } else if (e.code === "Space") {
-        state.keys.shoot = true;
-        e.preventDefault();
-      }
+      keys[e.key.toLowerCase()] = true;
+      if (e.key === " ") e.preventDefault();
     });
 
     window.addEventListener("keyup", (e) => {
-      if (e.code === "ArrowLeft" || e.code === "KeyA") {
-        state.keys.left = false;
-      } else if (e.code === "ArrowRight" || e.code === "KeyD") {
-        state.keys.right = false;
-      } else if (e.code === "Space") {
-        state.keys.shoot = false;
+      keys[e.key.toLowerCase()] = false;
+    });
+
+    canvas.addEventListener("mousedown", () => {
+      if (gameRunning) {
+        shoot();
       }
     });
 
-    // Touch / click controls for mobile
-    function pressKey(key) {
-      state.keys[key] = true;
-      setTimeout(() => (state.keys[key] = false), 110);
-    }
+    function handleMovement() {
+      if (keys["arrowleft"] || keys["a"]) {
+        player.x -= player.speed;
+      }
+      if (keys["arrowright"] || keys["d"]) {
+        player.x += player.speed;
+      }
+      player.x = Math.max(30, Math.min(width - 30, player.x));
 
-    btnLeft.addEventListener("click", () => pressKey("left"));
-    btnRight.addEventListener("click", () => pressKey("right"));
-    btnShoot.addEventListener("click", () => pressKey("shoot"));
-
-    btnLeft.addEventListener("touchstart", (e) => {
-      e.preventDefault();
-      pressKey("left");
-    });
-    btnRight.addEventListener("touchstart", (e) => {
-      e.preventDefault();
-      pressKey("right");
-    });
-    btnShoot.addEventListener("touchstart", (e) => {
-      e.preventDefault();
-      pressKey("shoot");
-    });
-
-    // --- Game loop ----------------------------------------------------------
-    function loop(timestamp) {
-      if (!state.running) return;
-
-      const delta = timestamp - state.lastFrameTime;
-      state.lastFrameTime = timestamp;
-
-      update(delta);
-      draw();
-
-      if (state.running) {
-        requestAnimationFrame(loop);
+      if (keys[" "]) {
+        shoot();
       }
     }
 
-    function update(delta) {
-      // Move player
-      if (state.keys.left) {
-        PLAYER.x -= PLAYER.speed;
-      }
-      if (state.keys.right) {
-        PLAYER.x += PLAYER.speed;
-      }
-      PLAYER.x = clamp(
-        PLAYER.x,
-        PLAYER.width / 2 + 10,
-        canvas.width - PLAYER.width / 2 - 10
-      );
-
-      // Shooting
+    function shoot() {
       const now = performance.now();
-      const SHOOT_INTERVAL = 230; // ms
-      if (state.keys.shoot && now - state.lastShotTime > SHOOT_INTERVAL) {
-        state.bullets.push({
-          x: PLAYER.x,
-          y: PLAYER.y - PLAYER.height / 2,
-          radius: 4,
-        });
-        state.lastShotTime = now;
+      const lvl = blasterLevels[currentLevelIndex];
+
+      if (now - lastShotTime < lvl.fireDelay) return;
+      lastShotTime = now;
+
+      bullets.push({
+        x: player.x,
+        y: player.y - 20,
+        vy: -6 - currentLevelIndex,
+        radius: 6 + currentLevelIndex * 2
+      });
+
+      playSound("shoot");
+    }
+
+    // -------- BUGS --------
+    function spawnBug() {
+      const x = 20 + Math.random() * (width - 40);
+      const speed = 1.3 + Math.random() * 1.2 + currentLevelIndex * 0.1;
+      bugs.push({
+        x,
+        y: -20,
+        vy: speed,
+        radius: 12 + Math.random() * 6
+      });
+    }
+
+    function updateBugs(delta) {
+      for (let bug of bugs) {
+        bug.y += bug.vy * delta;
       }
 
-      // Move bullets
-      for (const bullet of state.bullets) {
-        bullet.y -= BULLET_SPEED;
-      }
-      state.bullets = state.bullets.filter((b) => b.y > -10);
-
-      // Move bugs (swarm movement)
-      let changeDirection = false;
-      for (const bug of state.bugs) {
-        bug.x += bug.vx;
-        if (
-          bug.x > canvas.width - bug.width / 2 - 10 ||
-          bug.x < bug.width / 2 + 10
-        ) {
-          changeDirection = true;
+      bugs = bugs.filter((bug) => {
+        if (bug.y - bug.radius > height) {
+          missed++;
+          missedEl.textContent = missed;
+          playSound("miss");
+          return false;
         }
-      }
+        return true;
+      });
 
-      if (changeDirection) {
-        for (const bug of state.bugs) {
-          bug.vx *= -1;
-          bug.y += BUG_DROP_DISTANCE;
-        }
+      if (missed >= 5) {
+        endGame();
       }
+    }
 
-      // Bullet / bug collisions
-      for (let i = state.bugs.length - 1; i >= 0; i--) {
-        const bug = state.bugs[i];
-        for (let j = state.bullets.length - 1; j >= 0; j--) {
-          const b = state.bullets[j];
-          if (
-            b.x > bug.x - bug.width / 2 &&
-            b.x < bug.x + bug.width / 2 &&
-            b.y > bug.y - bug.height / 2 &&
-            b.y < bug.y + bug.height / 2
-          ) {
-            state.bugs.splice(i, 1);
-            state.bullets.splice(j, 1);
-            state.score += 10;
-            updateHud();
+    function updateBullets(delta) {
+      for (let b of bullets) {
+        b.y += b.vy * delta;
+      }
+      bullets = bullets.filter((b) => b.y + b.radius > -10);
+    }
+
+    function checkCollisions() {
+      for (let i = bugs.length - 1; i >= 0; i--) {
+        const bug = bugs[i];
+        for (let j = bullets.length - 1; j >= 0; j--) {
+          const b = bullets[j];
+          const dx = bug.x - b.x;
+          const dy = bug.y - b.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < bug.radius + b.radius) {
+            bugs.splice(i, 1);
+            bullets.splice(j, 1);
+            score++;
+            scoreEl.textContent = score;
+            updateBlasterLevel(score);
+            playSound("hit");
             break;
           }
         }
       }
-
-      // Check for bugs reaching the player
-      let reachedPlayer = false;
-      for (const bug of state.bugs) {
-        if (bug.y + bug.height / 2 >= PLAYER.y - PLAYER.height / 2) {
-          reachedPlayer = true;
-          break;
-        }
-      }
-
-      if (reachedPlayer) {
-        state.lives -= 1;
-        updateHud();
-        if (state.lives <= 0) {
-          handleGameOver();
-          return;
-        } else {
-          // Reset wave but keep score/level
-          PLAYER.x = canvas.width / 2;
-          state.bullets = [];
-          createBugWave();
-        }
-      }
-
-      // All bugs cleared -> next level
-      if (state.bugs.length === 0) {
-        state.score += 50; // wave bonus
-        nextLevel();
-      }
     }
 
-    // --- Drawing ------------------------------------------------------------
-    function drawStarfield() {
-      // Simple stars using random-ish pattern based on frame time
-      ctx.fillStyle = "black";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      const starCount = 80;
-      const time = Date.now() * 0.001;
-
-      for (let i = 0; i < starCount; i++) {
-        const x = (i * 97) % canvas.width;
-        const y = ((i * 61 + time * 40) % canvas.height + canvas.height) % canvas.height;
+    // -------- RENDERING --------
+    function drawBackground() {
+      // simple moving starfield
+      ctx.fillStyle = "#020617";
+      ctx.fillRect(0, 0, width, height);
+      const time = Date.now() * 0.002;
+      for (let i = 0; i < 60; i++) {
+        const x = (i * 97) % width;
+        const y = ((i * 53 + time * 40) % height + height) % height;
         const size = (i % 3) + 1;
-        const alpha = 0.3 + (i % 5) * 0.1;
-        ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+        const alpha = 0.3 + (i % 4) * 0.1;
+        ctx.fillStyle = `rgba(148,163,184,${alpha})`;
         ctx.fillRect(x, y, size, size);
       }
     }
 
     function drawPlayer() {
-      const { x, y, width, height } = PLAYER;
-
-      // Glow
-      const gradient = ctx.createLinearGradient(x - width / 2, y, x + width / 2, y);
-      gradient.addColorStop(0, "#22c1ff");
-      gradient.addColorStop(1, "#a855ff");
+      const lvl = blasterLevels[currentLevelIndex];
 
       ctx.save();
-      ctx.translate(x, y);
+      ctx.shadowColor = lvl.color;
+      ctx.shadowBlur = 20;
 
-      // Body
-      ctx.fillStyle = gradient;
-      ctx.beginPath();
-      ctx.roundRect(-width / 2, -height / 2, width, height, 7);
-      ctx.fill();
+      const bodyWidth = lvl.bodyWidth;
+      const bodyHeight = 18;
+      ctx.fillStyle = lvl.color;
+      ctx.fillRect(
+        player.x - bodyWidth / 2,
+        player.y - bodyHeight / 2,
+        bodyWidth,
+        bodyHeight
+      );
 
-      // Cockpit
-      ctx.fillStyle = "#e5f4ff";
-      ctx.beginPath();
-      ctx.ellipse(0, -height / 2, 10, 8, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Engine glow
-      ctx.fillStyle = "rgba(56,189,248,0.7)";
-      ctx.beginPath();
-      ctx.moveTo(-width / 3, height / 2);
-      ctx.lineTo(0, height / 2 + 10);
-      ctx.lineTo(width / 3, height / 2);
-      ctx.closePath();
-      ctx.fill();
-
-      ctx.restore();
-    }
-
-    function drawBug(bug, index) {
-      const { x, y, width, height } = bug;
-
-      ctx.save();
-      ctx.translate(x, y);
-
-      const bodyColor = index % 3 === 0
-        ? "#f97316"
-        : index % 3 === 1
-        ? "#22c55e"
-        : "#eab308";
-
-      // Body
-      ctx.fillStyle = bodyColor;
-      ctx.beginPath();
-      ctx.ellipse(0, 0, width / 2, height / 2, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Spots
-      ctx.fillStyle = "rgba(0,0,0,0.35)";
-      ctx.beginPath();
-      ctx.arc(-width / 5, -height / 6, 4, 0, Math.PI * 2);
-      ctx.arc(width / 6, 0, 3, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Head
-      ctx.fillStyle = "#111827";
-      ctx.beginPath();
-      ctx.arc(0, -height / 2, height / 2.3, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Eyes
-      ctx.fillStyle = "#f9fafb";
-      ctx.beginPath();
-      ctx.arc(-6, -height / 2 - 1, 3, 0, Math.PI * 2);
-      ctx.arc(6, -height / 2 - 1, 3, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = "#020617";
-      ctx.beginPath();
-      ctx.arc(-6, -height / 2 - 1, 1.2, 0, Math.PI * 2);
-      ctx.arc(6, -height / 2 - 1, 1.2, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Legs
-      ctx.strokeStyle = "#0f172a";
-      ctx.lineWidth = 2;
-      for (let i = -1; i <= 1; i++) {
-        ctx.beginPath();
-        ctx.moveTo(-width / 2, i * 6);
-        ctx.lineTo(-width / 2 - 8, i * 6 + 6);
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.moveTo(width / 2, i * 6);
-        ctx.lineTo(width / 2 + 8, i * 6 + 6);
-        ctx.stroke();
-      }
+      ctx.fillStyle = "#e5e7eb";
+      const barrelWidth = lvl.barrelWidth;
+      const barrelHeight = 12;
+      ctx.fillRect(
+        player.x - barrelWidth / 2,
+        player.y - bodyHeight / 2 - barrelHeight,
+        barrelWidth,
+        barrelHeight
+      );
 
       ctx.restore();
     }
 
     function drawBullets() {
-      ctx.fillStyle = "#38bdf8";
-      for (const b of state.bullets) {
+      const lvl = blasterLevels[currentLevelIndex];
+      ctx.fillStyle = lvl.shotColor;
+      for (let b of bullets) {
         ctx.beginPath();
         ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
         ctx.fill();
+      }
+    }
 
-        // Small glow
+    function drawBugs() {
+      for (let bug of bugs) {
         const gradient = ctx.createRadialGradient(
-          b.x,
-          b.y,
-          0,
-          b.x,
-          b.y,
-          b.radius * 3
+          bug.x - 3,
+          bug.y - 4,
+          2,
+          bug.x,
+          bug.y,
+          bug.radius
         );
-        gradient.addColorStop(0, "rgba(56,189,248,0.6)");
-        gradient.addColorStop(1, "rgba(56,189,248,0)");
+        gradient.addColorStop(0, "#f97316");
+        gradient.addColorStop(1, "#b91c1c");
+
         ctx.fillStyle = gradient;
         ctx.beginPath();
-        ctx.arc(b.x, b.y, b.radius * 3, 0, Math.PI * 2);
+        ctx.arc(bug.x, bug.y, bug.radius, 0, Math.PI * 2);
         ctx.fill();
-        ctx.fillStyle = "#38bdf8";
+
+        ctx.strokeStyle = "#facc15";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(bug.x - 4, bug.y - bug.radius + 2);
+        ctx.lineTo(bug.x - 8, bug.y - bug.radius - 6);
+        ctx.moveTo(bug.x + 4, bug.y - bug.radius + 2);
+        ctx.lineTo(bug.x + 8, bug.y - bug.radius - 6);
+        ctx.stroke();
       }
     }
 
-    function draw() {
-      drawStarfield();
+    // -------- GAME LOOP --------
+    let lastTime = 0;
+
+    function loop(timestamp) {
+      if (!gameRunning) return;
+      if (!lastTime) lastTime = timestamp;
+      const delta = (timestamp - lastTime) / 16.67;
+      lastTime = timestamp;
+
+      drawBackground();
+      handleMovement();
+      updateBullets(delta);
+      updateBugs(delta);
+      checkCollisions();
+
+      const spawnInterval = 900 - currentLevelIndex * 80;
+      if (timestamp - lastSpawnTime > spawnInterval) {
+        spawnBug();
+        lastSpawnTime = timestamp;
+      }
+
+      drawBullets();
+      drawBugs();
       drawPlayer();
 
-      state.bugs.forEach((bug, index) => drawBug(bug, index));
-      drawBullets();
-
-      // Soft vignette
-      const vignette = ctx.createRadialGradient(
-        canvas.width / 2,
-        canvas.height / 2,
-        50,
-        canvas.width / 2,
-        canvas.height / 2,
-        canvas.width / 1.1
-      );
-      vignette.addColorStop(0, "rgba(0,0,0,0)");
-      vignette.addColorStop(1, "rgba(0,0,0,0.7)");
-      ctx.fillStyle = vignette;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      requestAnimationFrame(loop);
     }
 
-    // --- UI wiring ----------------------------------------------------------
-    btnPlay.addEventListener("click", () => {
-      if (!state.running) {
-        resetGame();
-      }
-    });
+    function startGame() {
+      initAudio();
+      resetGame();
+      overlay.style.display = "none";
+      gameRunning = true;
+      lastTime = 0;
+      requestAnimationFrame(loop);
+    }
 
-    // Show initial overlay
-    showOverlay({
-      title: "Space Bug Blaster",
-      message:
-        "Pilot, your mission is simple: keep the swarm from reaching you.<br>Move with <strong>← / →</strong> and fire with <strong>Space</strong>, or use the touch controls below.",
-      showStats: false,
-    });
+    function endGame() {
+      gameRunning = false;
+      overlay.style.display = "flex";
+      overlayTitle.textContent = "Game Over!";
+      overlayText.textContent = "Final score: " + score + " • Click Start to try again.";
+      playSound("gameover");
+    }
 
-    // Initial background render so the canvas doesn't look empty before play
-    drawStarfield();
+    startBtn.addEventListener("click", startGame);
+
+    // Initial message
+    blasterMessage.textContent = blasterLevels[0].message;
   </script>
 </body>
 </html>
