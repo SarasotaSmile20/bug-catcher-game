@@ -21,7 +21,7 @@ let doublePointsActive = false;
 let freezeActive = false;
 let powerupTimeout = null;
 
-// Load best score from localStorage
+// Load best score
 const storedBest = parseInt(localStorage.getItem("spaceBugBest") || "0", 10);
 if (!isNaN(storedBest)) {
   bestScoreEl.textContent = storedBest;
@@ -33,7 +33,6 @@ function resetGame() {
   scoreEl.textContent = "0";
   timerEl.textContent = "30";
 
-  // Clear bugs and powerups
   [...gameArea.querySelectorAll(".bug, .powerup, .screen-flash")].forEach(el =>
     el.remove()
   );
@@ -54,23 +53,19 @@ function startGame() {
   startBtn.classList.add("hidden");
   hideMessage();
 
-  // Main spawn loop
   gameTickInterval = setInterval(() => {
     if (!freezeActive) {
-      // More powerful feel: more bugs / more chaos
       const spawnCount = Math.random() < 0.5 ? 1 : 2;
       for (let i = 0; i < spawnCount; i++) {
         spawnBug();
       }
     }
 
-    // Chance to spawn power-up
     if (Math.random() < 0.18) {
       spawnPowerup();
     }
   }, 850);
 
-  // Timer
   timerInterval = setInterval(() => {
     timeLeft -= 1;
     timerEl.textContent = timeLeft.toString();
@@ -93,17 +88,14 @@ function endGame() {
     powerupTimeout = null;
   }
 
-  // Play game over sound (safe if file missing)
   playSoundSafe(sndGameover);
 
-  // Update best score
   const best = parseInt(localStorage.getItem("spaceBugBest") || "0", 10);
   if (score > best) {
     localStorage.setItem("spaceBugBest", String(score));
     bestScoreEl.textContent = score.toString();
   }
 
-  // Show message
   showMessage(
     "Mission Complete!",
     `You blasted <strong>${score}</strong> space bugs!`,
@@ -116,12 +108,9 @@ function endGame() {
 
 function spawnBug() {
   const rect = gameArea.getBoundingClientRect();
-  // Keep a small margin
   const margin = 60;
-  const x =
-    Math.random() * (rect.width - margin * 2) + margin;
-  const y =
-    Math.random() * (rect.height - margin * 2) + margin;
+  const x = Math.random() * (rect.width - margin * 2) + margin;
+  const y = Math.random() * (rect.height - margin * 2) + margin;
 
   const bug = document.createElement("div");
   bug.className = `bug variant-${1 + Math.floor(Math.random() * 4)}`;
@@ -134,13 +123,14 @@ function spawnBug() {
   inner.appendChild(face);
   bug.appendChild(inner);
 
-  bug.addEventListener("click", () => handleBugClick(bug, x, y), {
-    passive: true
-  });
+  bug.addEventListener(
+    "click",
+    () => handleBugClick(bug, x, y),
+    { passive: true }
+  );
 
   gameArea.appendChild(bug);
 
-  // Auto-despawn after a while
   setTimeout(() => {
     bug.remove();
   }, 4000);
@@ -149,35 +139,28 @@ function spawnBug() {
 function handleBugClick(bug, x, y) {
   if (!gameRunning) return;
 
-  // More powerful weapon feel: blast ring + possible multi-hit
   createBlastRing(x, y);
-
-  // Remove clicked bug
   bug.remove();
 
-  // Score
   let points = 10;
-  if (doublePointsActive) {
-    points *= 2;
-  }
+  if (doublePointsActive) points *= 2;
   score += points;
   scoreEl.textContent = score.toString();
 
-  // Play laser sound
   playSoundSafe(sndLaser);
-
-  // Optional: small chance to chain-blast nearby bugs
   chainBlastNearby(x, y);
 }
 
 function chainBlastNearby(x, y) {
-  const radius = 70; // pixels
-
+  const radius = 70;
   const bugs = [...gameArea.querySelectorAll(".bug")];
+
+  const gaRect = gameArea.getBoundingClientRect();
+
   bugs.forEach(bug => {
     const rect = bug.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2 - gameArea.getBoundingClientRect().left;
-    const centerY = rect.top + rect.height / 2 - gameArea.getBoundingClientRect().top;
+    const centerX = rect.left + rect.width / 2 - gaRect.left;
+    const centerY = rect.top + rect.height / 2 - gaRect.top;
 
     const dx = centerX - x;
     const dy = centerY - y;
@@ -204,16 +187,13 @@ function createBlastRing(x, y) {
 }
 
 function spawnPowerup() {
-  // Limit to 1–2 visible powerups
   const existing = gameArea.querySelectorAll(".powerup").length;
   if (existing >= 2) return;
 
   const rect = gameArea.getBoundingClientRect();
   const margin = 70;
-  const x =
-    Math.random() * (rect.width - margin * 2) + margin;
-  const y =
-    Math.random() * (rect.height - margin * 2) + margin;
+  const x = Math.random() * (rect.width - margin * 2) + margin;
+  const y = Math.random() * (rect.height - margin * 2) + margin;
 
   const types = ["freeze", "double", "mega"];
   const type = types[Math.floor(Math.random() * types.length)];
@@ -222,13 +202,9 @@ function spawnPowerup() {
   el.className = `powerup ${type}`;
   el.dataset.type = type;
 
-  if (type === "freeze") {
-    el.textContent = "Freeze";
-  } else if (type === "double") {
-    el.textContent = "2x";
-  } else {
-    el.textContent = "Mega";
-  }
+  if (type === "freeze") el.textContent = "Freeze";
+  if (type === "double") el.textContent = "2x";
+  if (type === "mega") el.textContent = "Mega";
 
   el.style.left = `${x}px`;
   el.style.top = `${y}px`;
@@ -245,18 +221,13 @@ function spawnPowerup() {
 
   gameArea.appendChild(el);
 
-  // Despawn after a few seconds if unused
   setTimeout(() => el.remove(), 5000);
 }
 
 function activatePowerup(type) {
-  if (type === "freeze") {
-    applyFreezePowerup();
-  } else if (type === "double") {
-    applyDoublePointsPowerup();
-  } else if (type === "mega") {
-    applyMegaBlastPowerup();
-  }
+  if (type === "freeze") applyFreezePowerup();
+  if (type === "double") applyDoublePointsPowerup();
+  if (type === "mega") applyMegaBlastPowerup();
 }
 
 function applyFreezePowerup() {
@@ -284,13 +255,11 @@ function applyDoublePointsPowerup() {
 function applyMegaBlastPowerup() {
   playSoundSafe(sndMega);
 
-  // Screen flash
   const flash = document.createElement("div");
   flash.className = "screen-flash";
   gameArea.appendChild(flash);
   setTimeout(() => flash.remove(), 400);
 
-  // Remove all bugs and award some points
   const bugs = [...gameArea.querySelectorAll(".bug")];
   let gained = 0;
   bugs.forEach(bug => {
@@ -321,10 +290,8 @@ function playSoundSafe(audio) {
     audio.currentTime = 0;
     audio.play().catch(() => {});
   } catch {
-    // ignore if autoplay blocked, etc.
+    // ignore
   }
 }
-
-// Events
 
 startBtn.addEventListener("click", startGame);
