@@ -2,281 +2,720 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Bug Catcher Game</title>
+  <title>Space Bug Blaster</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
   <style>
+    :root {
+      --bg: #040816;
+      --accent: #5df2ff;
+      --accent-soft: rgba(93, 242, 255, 0.15);
+      --danger: #ff6b81;
+      --text: #f4f7ff;
+      --panel: rgba(7, 16, 36, 0.9);
+      --font-main: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        Roboto, sans-serif;
+    }
+
     * {
       box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
 
     body {
-      margin: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: linear-gradient(to bottom, #e0f7fa, #fffde7);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
       min-height: 100vh;
-      padding: 16px;
+      background: radial-gradient(circle at top, #111a3f 0, #02030b 55%, #000 100%);
+      color: var(--text);
+      font-family: var(--font-main);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .wrapper {
+      width: 100%;
+      max-width: 960px;
+      margin: 0 auto;
     }
 
     h1 {
-      margin: 8px 0;
       text-align: center;
-      font-size: 1.6rem;
+      letter-spacing: 0.12em;
+      font-size: clamp(1.7rem, 2.3vw, 2.2rem);
+      text-transform: uppercase;
+      color: var(--accent);
+      text-shadow: 0 0 12px rgba(93, 242, 255, 0.7);
+      margin-bottom: 0.3rem;
     }
 
     .subtitle {
-      font-size: 0.95rem;
-      margin-bottom: 12px;
       text-align: center;
-      color: #555;
+      font-size: 0.9rem;
+      opacity: 0.8;
+      margin-bottom: 0.75rem;
     }
 
-    .top-bar {
+    .hud {
       display: flex;
-      flex-wrap: wrap;
-      align-items: center;
       justify-content: center;
-      gap: 12px;
-      margin-bottom: 12px;
-    }
-
-    .info-box {
-      display: flex;
-      gap: 10px;
-      font-size: 1rem;
-      font-weight: 600;
-    }
-
-    .info-label {
-      font-weight: 500;
-      color: #555;
-    }
-
-    #message {
-      min-height: 1.4em;
+      gap: 1.5rem;
+      margin-bottom: 0.75rem;
       font-size: 0.95rem;
-      text-align: center;
-      color: #444;
     }
 
-    #start-btn {
-      padding: 8px 16px;
-      font-size: 1rem;
-      border-radius: 999px;
-      border: none;
-      background: #00796b;
-      color: #ffffff;
+    .hud span.value {
       font-weight: 600;
-      cursor: pointer;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-      transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.2s ease;
-      touch-action: manipulation;
+      color: var(--accent);
+      text-shadow: 0 0 6px rgba(93, 242, 255, 0.6);
     }
 
-    #start-btn:active {
-      transform: translateY(1px);
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-      background: #00695c;
-    }
-
-    /* Play area */
-
-    #play-area {
+    .game-shell {
       position: relative;
-      width: min(90vw, 500px);
-      height: min(65vh, 400px);
-      max-height: 450px;
-      background: radial-gradient(circle at top left, #ffffff, #b2dfdb);
-      border-radius: 24px;
-      border: 3px solid #004d40;
-      overflow: hidden;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
-      touch-action: none; /* helps with touch tapping inside */
+      border-radius: 14px;
+      padding: 0.75rem;
+      background: linear-gradient(135deg, #151b33, #050812);
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.04),
+        0 20px 50px rgba(0, 0, 0, 0.8);
     }
 
-    /* Bug */
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      border-radius: 10px;
+      background: radial-gradient(circle at top, #111827 0, #030712 55%, #000 100%);
+    }
 
-    #bug {
-      position: absolute;
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      background: radial-gradient(circle at 30% 30%, #ffebee, #c62828);
-      border: 3px solid #4e342e;
+    .controls {
       display: flex;
+      justify-content: center;
+      gap: 0.65rem;
+      margin-top: 0.6rem;
+    }
+
+    .controls button {
+      background: var(--panel);
+      border: 1px solid rgba(93, 242, 255, 0.3);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 0.45rem 0.9rem;
+      font-size: 1.1rem;
+      cursor: pointer;
+      min-width: 56px;
+      box-shadow: 0 0 10px rgba(93, 242, 255, 0.2);
+      transition: background 0.15s ease, transform 0.1s ease,
+        box-shadow 0.15s ease;
+      backdrop-filter: blur(6px);
+    }
+
+    .controls button:active {
+      transform: translateY(1px) scale(0.98);
+      box-shadow: 0 0 4px rgba(93, 242, 255, 0.3);
+      background: rgba(11, 22, 55, 0.95);
+    }
+
+    .controls-label {
+      text-align: center;
+      font-size: 0.75rem;
+      opacity: 0.7;
+      margin-top: 0.3rem;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0.75rem;
+      border-radius: 10px;
+      background: radial-gradient(circle at top, rgba(19, 40, 85, 0.9), rgba(3, 8, 22, 0.98));
+      border: 1px solid rgba(93, 242, 255, 0.25);
+      display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      font-size: 32px;
-      cursor: pointer;
-      user-select: none;
-      touch-action: none;
-      transform-origin: center center;
-      transition: transform 0.08s ease-out;
+      text-align: center;
+      padding: 1.5rem 1.2rem;
+      z-index: 10;
     }
 
-    #bug.hidden {
+    .overlay.hidden {
       display: none;
     }
 
-    /* Simple “pop” animation when bug is tapped */
-    #bug.caught {
-      transform: scale(1.15);
+    .overlay h2 {
+      font-size: 1.4rem;
+      margin-bottom: 0.4rem;
     }
 
-    /* Small instructions at bottom */
+    .overlay p {
+      max-width: 360px;
+      font-size: 0.9rem;
+      opacity: 0.85;
+      margin-bottom: 1rem;
+    }
 
-    .instructions {
-      margin-top: 10px;
-      font-size: 0.85rem;
-      text-align: center;
-      color: #555;
-      max-width: 500px;
+    .overlay .stat-line {
+      font-size: 0.9rem;
+      margin-bottom: 0.45rem;
+    }
+
+    .overlay .stat-label {
+      opacity: 0.75;
+      margin-right: 0.3rem;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #35d3ff, #7c5bff);
+      border-radius: 999px;
+      border: none;
+      color: #020617;
+      padding: 0.6rem 1.4rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow:
+        0 0 18px rgba(44, 202, 255, 0.7),
+        0 12px 24px rgba(0, 0, 0, 0.7);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      transition: transform 0.1s ease, box-shadow 0.15s ease, filter 0.15s ease;
+    }
+
+    .btn-primary:active {
+      transform: translateY(1px) scale(0.98);
+      box-shadow:
+        0 0 10px rgba(44, 202, 255, 0.9),
+        0 6px 15px rgba(0, 0, 0, 0.8);
+      filter: brightness(0.95);
+    }
+
+    @media (max-width: 640px) {
+      .hud {
+        font-size: 0.8rem;
+        gap: 1rem;
+      }
+      .overlay {
+        inset: 0.6rem;
+        padding-inline: 1rem;
+      }
     }
   </style>
 </head>
 <body>
-  <h1>Bug Catcher</h1>
-  <div class="subtitle">Tap the bug as many times as you can before time runs out!</div>
+  <div class="wrapper">
+    <h1>Space Bug Blaster</h1>
+    <p class="subtitle">Blast as many alien bugs as you can before your shields fail.</p>
 
-  <div class="top-bar">
-    <div class="info-box">
-      <span class="info-label">Score:</span>
-      <span id="score">0</span>
+    <div class="hud">
+      <div>Score: <span id="score" class="value">0</span></div>
+      <div>Level: <span id="level" class="value">1</span></div>
+      <div>Lives: <span id="lives" class="value">3</span></div>
     </div>
-    <div class="info-box">
-      <span class="info-label">Time:</span>
-      <span id="time">30</span>s
+
+    <div class="game-shell">
+      <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+      <div class="overlay" id="overlay">
+        <h2 id="overlayTitle">Space Bug Blaster</h2>
+        <p id="overlayMessage">
+          Pilot, your mission is simple: keep the swarm from reaching you.
+          Move with <strong>← / →</strong> and fire with <strong>Space</strong>.
+        </p>
+        <div id="overlayStats" style="margin-bottom: 1rem; display: none;">
+          <div class="stat-line">
+            <span class="stat-label">Final Score:</span>
+            <span id="finalScore"></span>
+          </div>
+          <div class="stat-line">
+            <span class="stat-label">Highest Level:</span>
+            <span id="finalLevel"></span>
+          </div>
+        </div>
+        <button class="btn-primary" id="btnPlay">Play</button>
+      </div>
     </div>
-    <button id="start-btn">Start Game</button>
-  </div>
 
-  <div id="message"></div>
-
-  <div id="play-area">
-    <div id="bug" class="hidden" aria-label="Bug">🐞</div>
-  </div>
-
-  <div class="instructions">
-    Tip: The bug moves faster as your score goes up.  
-    Great for 2nd–3rd graders: quick rounds, big buttons, and simple tapping.
+    <div class="controls">
+      <button id="btnLeft">⟵</button>
+      <button id="btnShoot">⦿</button>
+      <button id="btnRight">⟶</button>
+    </div>
+    <div class="controls-label">Touch controls (mobile): move & shoot</div>
   </div>
 
   <script>
-    const playArea = document.getElementById("play-area");
-    const bug = document.getElementById("bug");
-    const scoreDisplay = document.getElementById("score");
-    const timeDisplay = document.getElementById("time");
-    const message = document.getElementById("message");
-    const startBtn = document.getElementById("start-btn");
+    // --- Canvas setup --------------------------------------------------------
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
 
-    let score = 0;
-    let timeLeft = 30;           // seconds per round
-    let gameActive = false;
-    let timerId = null;          // countdown timer
-    let moveId = null;           // bug movement timer
+    // HUD elements
+    const scoreEl = document.getElementById("score");
+    const levelEl = document.getElementById("level");
+    const livesEl = document.getElementById("lives");
 
-    // Move bug to a random position inside play area
-    function moveBugRandomly() {
-      const areaRect = playArea.getBoundingClientRect();
-      const bugRect = bug.getBoundingClientRect();
+    // Overlay elements
+    const overlay = document.getElementById("overlay");
+    const overlayTitle = document.getElementById("overlayTitle");
+    const overlayMessage = document.getElementById("overlayMessage");
+    const overlayStats = document.getElementById("overlayStats");
+    const finalScoreEl = document.getElementById("finalScore");
+    const finalLevelEl = document.getElementById("finalLevel");
+    const btnPlay = document.getElementById("btnPlay");
 
-      const maxX = areaRect.width - bugRect.width;
-      const maxY = areaRect.height - bugRect.height;
+    // Touch buttons
+    const btnLeft = document.getElementById("btnLeft");
+    const btnRight = document.getElementById("btnRight");
+    const btnShoot = document.getElementById("btnShoot");
 
-      const randomX = Math.random() * maxX;
-      const randomY = Math.random() * maxY;
+    // --- Game state ---------------------------------------------------------
+    const state = {
+      running: false,
+      gameOver: false,
+      score: 0,
+      level: 1,
+      lives: 3,
+      lastShotTime: 0,
+      lastFrameTime: 0,
+      keys: { left: false, right: false, shoot: false },
+      bugs: [],
+      bullets: [],
+    };
 
-      bug.style.left = randomX + "px";
-      bug.style.top = randomY + "px";
+    const PLAYER = {
+      x: canvas.width / 2,
+      y: canvas.height - 60,
+      width: 48,
+      height: 20,
+      speed: 6,
+    };
+
+    const BULLET_SPEED = 10;
+    const BUG_DROP_DISTANCE = 20;
+    const BASE_BUG_SPEED = 0.8;
+
+    // --- Utility ------------------------------------------------------------
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
     }
 
-    function setBugSpeed() {
-      // Clear any old movement timer
-      if (moveId) clearInterval(moveId);
+    function resetGame() {
+      state.score = 0;
+      state.level = 1;
+      state.lives = 3;
+      state.gameOver = false;
+      PLAYER.x = canvas.width / 2;
+      state.bullets = [];
+      createBugWave();
+      updateHud();
+      hideOverlay();
+      state.running = true;
+      state.lastFrameTime = performance.now();
+      requestAnimationFrame(loop);
+    }
 
-      // Faster as score increases, with a minimum speed limit
-      const baseSpeed = 1200; // ms
-      const speed = Math.max(350, baseSpeed - score * 40);
+    function createBugWave() {
+      state.bugs = [];
+      const rows = 2 + state.level; // more rows each level
+      const cols = 7;
+      const paddingX = 50;
+      const paddingY = 50;
+      const spacingX = (canvas.width - paddingX * 2) / (cols - 1);
+      const spacingY = 40;
 
-      moveId = setInterval(() => {
-        if (gameActive) {
-          moveBugRandomly();
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+          state.bugs.push({
+            x: paddingX + col * spacingX,
+            y: paddingY + row * spacingY,
+            width: 30,
+            height: 22,
+            vx: BASE_BUG_SPEED + state.level * 0.15,
+          });
         }
-      }, speed);
+      }
     }
 
-    function startGame() {
-      score = 0;
-      timeLeft = 30;
-      gameActive = true;
-
-      scoreDisplay.textContent = score;
-      timeDisplay.textContent = timeLeft;
-      message.textContent = "Catch the bug!";
-
-      bug.classList.remove("hidden");
-      bug.classList.remove("caught");
-      moveBugRandomly();
-      setBugSpeed();
-
-      // Clear old timers if any
-      if (timerId) clearInterval(timerId);
-
-      timerId = setInterval(() => {
-        timeLeft--;
-        timeDisplay.textContent = timeLeft;
-
-        if (timeLeft <= 0) {
-          endGame();
-        }
-      }, 1000);
+    function updateHud() {
+      scoreEl.textContent = state.score;
+      levelEl.textContent = state.level;
+      livesEl.textContent = state.lives;
     }
 
-    function endGame() {
-      gameActive = false;
-      if (timerId) clearInterval(timerId);
-      if (moveId) clearInterval(moveId);
-
-      bug.classList.add("hidden");
-      message.textContent = `Time's up! Your score: ${score}`;
+    function showOverlay({ title, message, showStats = false }) {
+      overlayTitle.textContent = title;
+      overlayMessage.innerHTML = message;
+      overlayStats.style.display = showStats ? "block" : "none";
+      if (showStats) {
+        finalScoreEl.textContent = state.score;
+        finalLevelEl.textContent = state.level;
+      }
+      overlay.classList.remove("hidden");
     }
 
-    function handleBugTap(event) {
-      // Prevents “ghost” mouse events after touch
-      event.preventDefault();
-
-      if (!gameActive) return;
-
-      score++;
-      scoreDisplay.textContent = score;
-
-      // Quick pop animation
-      bug.classList.add("caught");
-      setTimeout(() => bug.classList.remove("caught"), 80);
-
-      // Move immediately when caught
-      moveBugRandomly();
-      setBugSpeed();
+    function hideOverlay() {
+      overlay.classList.add("hidden");
     }
 
-    // Support both mouse and touch
-    bug.addEventListener("click", handleBugTap);
-    bug.addEventListener("touchstart", handleBugTap, { passive: false });
+    function handleGameOver() {
+      state.running = false;
+      state.gameOver = true;
+      showOverlay({
+        title: "Game Over",
+        message:
+          "The swarm breached your shields. But the galaxy loves a comeback.",
+        showStats: true,
+      });
+    }
 
-    startBtn.addEventListener("click", () => {
-      startGame();
-    });
+    function nextLevel() {
+      state.level++;
+      state.bullets = [];
+      createBugWave();
+      updateHud();
+    }
 
-    // Ensure bug stays inside if the screen is rotated or resized
-    window.addEventListener("resize", () => {
-      if (!bug.classList.contains("hidden")) {
-        moveBugRandomly();
+    // --- Input handling -----------------------------------------------------
+    window.addEventListener("keydown", (e) => {
+      if (e.code === "ArrowLeft" || e.code === "KeyA") {
+        state.keys.left = true;
+      } else if (e.code === "ArrowRight" || e.code === "KeyD") {
+        state.keys.right = true;
+      } else if (e.code === "Space") {
+        state.keys.shoot = true;
+        e.preventDefault();
       }
     });
+
+    window.addEventListener("keyup", (e) => {
+      if (e.code === "ArrowLeft" || e.code === "KeyA") {
+        state.keys.left = false;
+      } else if (e.code === "ArrowRight" || e.code === "KeyD") {
+        state.keys.right = false;
+      } else if (e.code === "Space") {
+        state.keys.shoot = false;
+      }
+    });
+
+    // Touch / click controls for mobile
+    function pressKey(key) {
+      state.keys[key] = true;
+      setTimeout(() => (state.keys[key] = false), 110);
+    }
+
+    btnLeft.addEventListener("click", () => pressKey("left"));
+    btnRight.addEventListener("click", () => pressKey("right"));
+    btnShoot.addEventListener("click", () => pressKey("shoot"));
+
+    btnLeft.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      pressKey("left");
+    });
+    btnRight.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      pressKey("right");
+    });
+    btnShoot.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      pressKey("shoot");
+    });
+
+    // --- Game loop ----------------------------------------------------------
+    function loop(timestamp) {
+      if (!state.running) return;
+
+      const delta = timestamp - state.lastFrameTime;
+      state.lastFrameTime = timestamp;
+
+      update(delta);
+      draw();
+
+      if (state.running) {
+        requestAnimationFrame(loop);
+      }
+    }
+
+    function update(delta) {
+      // Move player
+      if (state.keys.left) {
+        PLAYER.x -= PLAYER.speed;
+      }
+      if (state.keys.right) {
+        PLAYER.x += PLAYER.speed;
+      }
+      PLAYER.x = clamp(
+        PLAYER.x,
+        PLAYER.width / 2 + 10,
+        canvas.width - PLAYER.width / 2 - 10
+      );
+
+      // Shooting
+      const now = performance.now();
+      const SHOOT_INTERVAL = 230; // ms
+      if (state.keys.shoot && now - state.lastShotTime > SHOOT_INTERVAL) {
+        state.bullets.push({
+          x: PLAYER.x,
+          y: PLAYER.y - PLAYER.height / 2,
+          radius: 4,
+        });
+        state.lastShotTime = now;
+      }
+
+      // Move bullets
+      for (const bullet of state.bullets) {
+        bullet.y -= BULLET_SPEED;
+      }
+      state.bullets = state.bullets.filter((b) => b.y > -10);
+
+      // Move bugs (swarm movement)
+      let changeDirection = false;
+      for (const bug of state.bugs) {
+        bug.x += bug.vx;
+        if (
+          bug.x > canvas.width - bug.width / 2 - 10 ||
+          bug.x < bug.width / 2 + 10
+        ) {
+          changeDirection = true;
+        }
+      }
+
+      if (changeDirection) {
+        for (const bug of state.bugs) {
+          bug.vx *= -1;
+          bug.y += BUG_DROP_DISTANCE;
+        }
+      }
+
+      // Bullet / bug collisions
+      for (let i = state.bugs.length - 1; i >= 0; i--) {
+        const bug = state.bugs[i];
+        for (let j = state.bullets.length - 1; j >= 0; j--) {
+          const b = state.bullets[j];
+          if (
+            b.x > bug.x - bug.width / 2 &&
+            b.x < bug.x + bug.width / 2 &&
+            b.y > bug.y - bug.height / 2 &&
+            b.y < bug.y + bug.height / 2
+          ) {
+            state.bugs.splice(i, 1);
+            state.bullets.splice(j, 1);
+            state.score += 10;
+            updateHud();
+            break;
+          }
+        }
+      }
+
+      // Check for bugs reaching the player
+      let reachedPlayer = false;
+      for (const bug of state.bugs) {
+        if (bug.y + bug.height / 2 >= PLAYER.y - PLAYER.height / 2) {
+          reachedPlayer = true;
+          break;
+        }
+      }
+
+      if (reachedPlayer) {
+        state.lives -= 1;
+        updateHud();
+        if (state.lives <= 0) {
+          handleGameOver();
+          return;
+        } else {
+          // Reset wave but keep score/level
+          PLAYER.x = canvas.width / 2;
+          state.bullets = [];
+          createBugWave();
+        }
+      }
+
+      // All bugs cleared -> next level
+      if (state.bugs.length === 0) {
+        state.score += 50; // wave bonus
+        nextLevel();
+      }
+    }
+
+    // --- Drawing ------------------------------------------------------------
+    function drawStarfield() {
+      // Simple stars using random-ish pattern based on frame time
+      ctx.fillStyle = "black";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const starCount = 80;
+      const time = Date.now() * 0.001;
+
+      for (let i = 0; i < starCount; i++) {
+        const x = (i * 97) % canvas.width;
+        const y = ((i * 61 + time * 40) % canvas.height + canvas.height) % canvas.height;
+        const size = (i % 3) + 1;
+        const alpha = 0.3 + (i % 5) * 0.1;
+        ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+        ctx.fillRect(x, y, size, size);
+      }
+    }
+
+    function drawPlayer() {
+      const { x, y, width, height } = PLAYER;
+
+      // Glow
+      const gradient = ctx.createLinearGradient(x - width / 2, y, x + width / 2, y);
+      gradient.addColorStop(0, "#22c1ff");
+      gradient.addColorStop(1, "#a855ff");
+
+      ctx.save();
+      ctx.translate(x, y);
+
+      // Body
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.roundRect(-width / 2, -height / 2, width, height, 7);
+      ctx.fill();
+
+      // Cockpit
+      ctx.fillStyle = "#e5f4ff";
+      ctx.beginPath();
+      ctx.ellipse(0, -height / 2, 10, 8, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Engine glow
+      ctx.fillStyle = "rgba(56,189,248,0.7)";
+      ctx.beginPath();
+      ctx.moveTo(-width / 3, height / 2);
+      ctx.lineTo(0, height / 2 + 10);
+      ctx.lineTo(width / 3, height / 2);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    function drawBug(bug, index) {
+      const { x, y, width, height } = bug;
+
+      ctx.save();
+      ctx.translate(x, y);
+
+      const bodyColor = index % 3 === 0
+        ? "#f97316"
+        : index % 3 === 1
+        ? "#22c55e"
+        : "#eab308";
+
+      // Body
+      ctx.fillStyle = bodyColor;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, width / 2, height / 2, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Spots
+      ctx.fillStyle = "rgba(0,0,0,0.35)";
+      ctx.beginPath();
+      ctx.arc(-width / 5, -height / 6, 4, 0, Math.PI * 2);
+      ctx.arc(width / 6, 0, 3, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Head
+      ctx.fillStyle = "#111827";
+      ctx.beginPath();
+      ctx.arc(0, -height / 2, height / 2.3, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Eyes
+      ctx.fillStyle = "#f9fafb";
+      ctx.beginPath();
+      ctx.arc(-6, -height / 2 - 1, 3, 0, Math.PI * 2);
+      ctx.arc(6, -height / 2 - 1, 3, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#020617";
+      ctx.beginPath();
+      ctx.arc(-6, -height / 2 - 1, 1.2, 0, Math.PI * 2);
+      ctx.arc(6, -height / 2 - 1, 1.2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Legs
+      ctx.strokeStyle = "#0f172a";
+      ctx.lineWidth = 2;
+      for (let i = -1; i <= 1; i++) {
+        ctx.beginPath();
+        ctx.moveTo(-width / 2, i * 6);
+        ctx.lineTo(-width / 2 - 8, i * 6 + 6);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(width / 2, i * 6);
+        ctx.lineTo(width / 2 + 8, i * 6 + 6);
+        ctx.stroke();
+      }
+
+      ctx.restore();
+    }
+
+    function drawBullets() {
+      ctx.fillStyle = "#38bdf8";
+      for (const b of state.bullets) {
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Small glow
+        const gradient = ctx.createRadialGradient(
+          b.x,
+          b.y,
+          0,
+          b.x,
+          b.y,
+          b.radius * 3
+        );
+        gradient.addColorStop(0, "rgba(56,189,248,0.6)");
+        gradient.addColorStop(1, "rgba(56,189,248,0)");
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.radius * 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#38bdf8";
+      }
+    }
+
+    function draw() {
+      drawStarfield();
+      drawPlayer();
+
+      state.bugs.forEach((bug, index) => drawBug(bug, index));
+      drawBullets();
+
+      // Soft vignette
+      const vignette = ctx.createRadialGradient(
+        canvas.width / 2,
+        canvas.height / 2,
+        50,
+        canvas.width / 2,
+        canvas.height / 2,
+        canvas.width / 1.1
+      );
+      vignette.addColorStop(0, "rgba(0,0,0,0)");
+      vignette.addColorStop(1, "rgba(0,0,0,0.7)");
+      ctx.fillStyle = vignette;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // --- UI wiring ----------------------------------------------------------
+    btnPlay.addEventListener("click", () => {
+      if (!state.running) {
+        resetGame();
+      }
+    });
+
+    // Show initial overlay
+    showOverlay({
+      title: "Space Bug Blaster",
+      message:
+        "Pilot, your mission is simple: keep the swarm from reaching you.<br>Move with <strong>← / →</strong> and fire with <strong>Space</strong>, or use the touch controls below.",
+      showStats: false,
+    });
+
+    // Initial background render so the canvas doesn't look empty before play
+    drawStarfield();
   </script>
 </body>
 </html>
