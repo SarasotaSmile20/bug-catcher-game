@@ -21,4 +21,4 @@ jobs:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_STREAMLIST_APP_ADMIN }}
           channelId: live
-          projectId: streamlist-app-admin
+          projectId: bug-catcher-game
