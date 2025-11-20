@@ -681,6 +681,14 @@ window.addEventListener("load", () => {
   /* ---------- EVENT HOOKS ---------- */
 
   startBtn.addEventListener("click", startGame);
+  startBtn.addEventListener(
+    "touchstart",
+    e => {
+      e.preventDefault();
+      startGame();
+    },
+    { passive: false }
+  );
 
   // initial layout
   initBlaster();
