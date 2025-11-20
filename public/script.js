@@ -168,8 +168,8 @@ window.addEventListener("load", () => {
   window.addEventListener("resize", resizeCanvas);
   window.addEventListener("orientationchange", resizeCanvas);
 
- function resizeCanvas() {
-   if (!gameArea) return;
+  function resizeCanvas() {
+    if (!gameArea) return;
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
     const maxContentWidth = Math.min(960, viewportWidth);
@@ -186,24 +186,14 @@ window.addEventListener("load", () => {
 
     if (gameWrapper) {
       gameWrapper.style.width = `${areaWidth}px`;
+      gameWrapper.style.minHeight = `${areaWidth * 0.9}px`;
     }
     gameArea.style.width = `${areaWidth}px`;
 
-    const gapValue = pageStyles
-      ? parseFloat(pageStyles.rowGap || pageStyles.gap || "0") || 0
-      : 0;
-
-    const reservedHeight =
-      (hud?.offsetHeight || 0) +
-      gapValue +
-      16;
-
-    const availableHeight = Math.max(320, viewportHeight - reservedHeight - 20);
-    const areaHeight = Math.min(availableHeight, (viewportWidth / 3) * 4);
-
-    if (gameWrapper) {
-      gameWrapper.style.height = `${areaHeight}px`;
-    }
+    const areaHeight = Math.min(
+      Math.max(320, viewportHeight - 80),
+      areaWidth * 1.2
+    );
     gameArea.style.height = `${areaHeight}px`;
 
     initBlaster();
