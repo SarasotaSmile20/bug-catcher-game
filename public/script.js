@@ -168,8 +168,8 @@ window.addEventListener("load", () => {
   window.addEventListener("resize", resizeCanvas);
   window.addEventListener("orientationchange", resizeCanvas);
 
-  function resizeCanvas() {
-    if (!gameArea) return;
+ function resizeCanvas() {
+   if (!gameArea) return;
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
     const maxContentWidth = Math.min(960, viewportWidth);
@@ -195,14 +195,11 @@ window.addEventListener("load", () => {
 
     const reservedHeight =
       (hud?.offsetHeight || 0) +
-      (playerPanel?.offsetHeight || 0) +
-      (instructionsSection?.offsetHeight || 0) +
-      gapValue * 2 +
-      32;
+      gapValue +
+      16;
 
-    const availableHeight = Math.max(320, viewportHeight - reservedHeight);
-    const clampedHeight = Math.min(viewportHeight - 60, availableHeight);
-    const areaHeight = Math.max(320, clampedHeight);
+    const availableHeight = Math.max(320, viewportHeight - reservedHeight - 20);
+    const areaHeight = Math.min(availableHeight, (viewportWidth / 3) * 4);
 
     if (gameWrapper) {
       gameWrapper.style.height = `${areaHeight}px`;
