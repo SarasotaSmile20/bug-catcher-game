@@ -36,9 +36,9 @@ window.addEventListener("load", () => {
   let doublePointsActive = false;
   let freezeActive = false;
   let powerupTimeout = null;
-  const INITIAL_SPAWN_DELAY = 900;
-  const MIN_SPAWN_DELAY = 280;
-  const SPAWN_ACCELERATION = 0.94;
+  const INITIAL_SPAWN_DELAY = 650;
+  const MIN_SPAWN_DELAY = 180;
+  const SPAWN_ACCELERATION = 0.9;
   let spawnDelay = INITIAL_SPAWN_DELAY;
 
   // blaster position (in pixels within gameArea)
@@ -276,10 +276,11 @@ window.addEventListener("load", () => {
     spawnTimeout = setTimeout(() => {
       if (!gameRunning) return;
 
-      const intensityBoost = spawnDelay < 600 ? 1 : 0;
-      let spawnCount = 1 + intensityBoost + (Math.random() < 0.4 ? 1 : 0);
+      const midBoost = spawnDelay < 600 ? 1 : 0;
+      const lateBoost = spawnDelay < 420 ? 1 : 0;
+      let spawnCount = 2 + midBoost + lateBoost + (Math.random() < 0.55 ? 1 : 0);
       if (freezeActive) {
-        spawnCount = 1;
+        spawnCount = Math.max(1, Math.floor(spawnCount / 2));
       }
       for (let i = 0; i < spawnCount; i++) {
         spawnBug();
