@@ -20,6 +20,7 @@ window.addEventListener("load", () => {
   const blaster = document.getElementById("blaster");
   const playerNameInput = document.getElementById("player-name");
   const leaderboardList = document.getElementById("leaderboard-list");
+  const currentPlayerEl = document.getElementById("current-player");
   const gamePage = document.querySelector(".game-page");
   const gameWrapper = document.querySelector(".game-wrapper");
   const hud = document.querySelector(".hud");
@@ -63,12 +64,14 @@ window.addEventListener("load", () => {
     const savedName = localStorage.getItem(PLAYER_NAME_KEY) || "";
     playerNameInput.value = savedName;
     currentPlayer = savedName.trim();
+    if (currentPlayerEl) currentPlayerEl.textContent = currentPlayer || "—";
     playerNameInput.addEventListener("input", () => {
       const sanitized = playerNameInput.value.replace(/[^a-z0-9 _-]/gi, "").slice(0, 16);
       if (sanitized !== playerNameInput.value) {
         playerNameInput.value = sanitized;
       }
       localStorage.setItem(PLAYER_NAME_KEY, sanitized);
+      if (currentPlayerEl) currentPlayerEl.textContent = sanitized || "—";
     });
   }
 
@@ -247,6 +250,7 @@ window.addEventListener("load", () => {
 
     currentPlayer = enteredName;
     localStorage.setItem(PLAYER_NAME_KEY, enteredName);
+    if (currentPlayerEl) currentPlayerEl.textContent = currentPlayer || "—";
 
     gameRunning = true;
     resetGame();

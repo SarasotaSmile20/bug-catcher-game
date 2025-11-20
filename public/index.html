@@ -24,6 +24,10 @@
         <span class="hud-label">Best:</span>
         <span id="best-score" class="hud-value">0</span>
       </div>
+      <div class="hud-section hud-pilot">
+        <label for="player-name" class="hud-label">Pilot</label>
+        <input id="player-name" type="text" maxlength="16" placeholder="Call sign" autocomplete="off" class="hud-input" />
+      </div>
     </header>
 
     <main class="game-wrapper">
@@ -49,10 +53,6 @@
     </main>
 
     <section class="player-panel">
-      <div class="player-name-field">
-        <label for="player-name">Pilot Name</label>
-        <input id="player-name" type="text" maxlength="16" placeholder="e.g. Nova" autocomplete="off" />
-      </div>
       <div class="leaderboard">
         <h2>Top Pilots</h2>
         <ol id="leaderboard-list"></ol>
