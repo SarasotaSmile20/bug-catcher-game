@@ -2,5 +2,14 @@
 {
   "projects": {
     "default": "bug-catcher-game"
+  },
+  "targets": {
+    "bug-catcher-game": {
+      "hosting": {
+        "bugCatcher": [
+          "bug-catcher-game"
+        ]
+      }
+    }
   }
 }

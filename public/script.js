@@ -1,3 +1,15 @@
+// Invoice generator deployed earlier installed a service worker that still
+// served cached files. Remove any existing registrations/caches so the new
+// Bug Catcher build renders immediately.
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.getRegistrations().then(registrations => {
+    registrations.forEach(registration => registration.unregister());
+  });
+  if ("caches" in window) {
+    caches.keys().then(keys => keys.forEach(key => caches.delete(key)));
+  }
+}
+
 window.addEventListener("load", () => {
   const gameArea = document.getElementById("game-area");
   const scoreEl = document.getElementById("score");
