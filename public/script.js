@@ -114,10 +114,12 @@ window.addEventListener("load", () => {
   });
 
   function shouldIgnorePointerTarget(target) {
-    return (
-      target.classList.contains("bug") ||
-      target.classList.contains("powerup") ||
-      target === startBtn
+    if (!target) return false;
+    return Boolean(
+      target.closest(".bug") ||
+        target.closest(".powerup") ||
+        target.closest("#start-btn") ||
+        target.closest(".message")
     );
   }
 
@@ -127,39 +129,30 @@ window.addEventListener("load", () => {
     moveBlasterTo(targetX - blasterWidth / 2);
   }
 
-  // tap / click in background to slide blaster there
-  gameArea.addEventListener(
-    "click",
-    e => {
-      if (shouldIgnorePointerTarget(e.target)) return;
-      moveToPointer(e.clientX);
-    },
-    { passive: true }
-  );
+  let pointerDragging = false;
 
-  const touchOptions = { passive: false };
-  gameArea.addEventListener(
-    "touchstart",
-    e => {
-      if (shouldIgnorePointerTarget(e.target)) return;
-      const touch = e.touches[0];
-      if (!touch) return;
-      moveToPointer(touch.clientX);
+  gameArea.addEventListener("pointerdown", e => {
+    if (shouldIgnorePointerTarget(e.target)) return;
+    pointerDragging = true;
+    moveToPointer(e.clientX);
+    if (e.pointerType === "touch") {
       e.preventDefault();
-    },
-    touchOptions
-  );
-  gameArea.addEventListener(
-    "touchmove",
-    e => {
-      if (shouldIgnorePointerTarget(e.target)) return;
-      const touch = e.touches[0];
-      if (!touch) return;
-      moveToPointer(touch.clientX);
+    }
+  });
+
+  gameArea.addEventListener("pointermove", e => {
+    if (!pointerDragging) return;
+    moveToPointer(e.clientX);
+    if (e.pointerType === "touch") {
       e.preventDefault();
-    },
-    touchOptions
-  );
+    }
+  });
+
+  ["pointerup", "pointerleave", "pointercancel"].forEach(evt => {
+    window.addEventListener(evt, () => {
+      pointerDragging = false;
+    });
+  });
 
   window.addEventListener("resize", () => {
     initBlaster();
@@ -205,6 +198,9 @@ window.addEventListener("load", () => {
         "Enter your call sign to log your scores on the leaderboard.",
         "Type a name and tap Start Mission!"
       );
+      setTimeout(() => {
+        playerNameInput?.focus();
+      }, 50);
       return;
     }
 
