@@ -276,19 +276,21 @@ window.addEventListener("load", () => {
     spawnTimeout = setTimeout(() => {
       if (!gameRunning) return;
 
-      if (!freezeActive) {
-        const intensityBoost = spawnDelay < 600 ? 1 : 0;
-        const spawnCount = 1 + intensityBoost + (Math.random() < 0.4 ? 1 : 0);
-        for (let i = 0; i < spawnCount; i++) {
-          spawnBug();
-        }
+      const intensityBoost = spawnDelay < 600 ? 1 : 0;
+      let spawnCount = 1 + intensityBoost + (Math.random() < 0.4 ? 1 : 0);
+      if (freezeActive) {
+        spawnCount = 1;
+      }
+      for (let i = 0; i < spawnCount; i++) {
+        spawnBug();
       }
 
       if (Math.random() < 0.18) {
         spawnPowerup();
       }
 
-      spawnDelay = Math.max(MIN_SPAWN_DELAY, spawnDelay * SPAWN_ACCELERATION);
+      const slowFactor = freezeActive ? 1.02 : SPAWN_ACCELERATION;
+      spawnDelay = Math.max(MIN_SPAWN_DELAY, spawnDelay * slowFactor);
       scheduleSpawnWave();
     }, spawnDelay);
   }
