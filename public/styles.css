@@ -16,17 +16,15 @@ body {
   color: #f9fafb;
   min-height: 100vh;
   min-width: 320px;
-  display: flex;
-  justify-content: center;
-  align-items: stretch;
+  margin: 0;
 }
 
 @supports (height: 1dvh) {
   html,
-body {
-  min-height: 100dvh;
-  min-width: 320px;
-}
+  body {
+    min-height: 100dvh;
+    min-width: 320px;
+  }
 
   body {
     min-height: 100dvh;
@@ -36,8 +34,9 @@ body {
 /* Layout */
 
 .game-page {
-  width: 100%;
-  max-width: min(960px, 100vw);
+  width: min(960px, 100%);
+  margin: 0 auto;
+  min-height: 100vh;
   padding: clamp(10px, 3vw, 24px);
   display: flex;
   flex-direction: column;
