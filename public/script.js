@@ -101,6 +101,12 @@ window.addEventListener("load", () => {
 
   // keyboard controls – ALWAYS allowed (even before start)
   window.addEventListener("keydown", e => {
+    const typingName =
+      playerNameInput && document.activeElement === playerNameInput;
+    if (typingName) {
+      return;
+    }
+
     if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") {
       e.preventDefault();
       moveBlaster(-30);
