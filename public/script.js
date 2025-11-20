@@ -18,6 +18,7 @@ window.addEventListener("load", () => {
   const startBtn = document.getElementById("start-btn");
   const messageEl = document.getElementById("message");
   const blaster = document.getElementById("blaster");
+  const fireBtn = document.getElementById("fire-btn");
 
   // Sounds
   const sndLaser = document.getElementById("snd-laser");
@@ -38,6 +39,11 @@ window.addEventListener("load", () => {
   // blaster position (in pixels within gameArea)
   let blasterX = 0;
   let blasterWidth = 0;
+  const activeShots = [];
+  let sprayLoopId = null;
+  let fireInterval = null;
+  let fireHoldActive = false;
+  let lastShotTime = 0;
 
   // Load best score
   const storedBest = parseInt(localStorage.getItem("spaceBugBest") || "0", 10);
@@ -71,15 +77,44 @@ window.addEventListener("load", () => {
     moveBlasterTo(blasterX + delta);
   }
 
+  function isFireKeyEvent(e) {
+    return (
+      e.code === "Space" ||
+      e.key === " " ||
+      e.key === "Space" ||
+      e.key === "Spacebar" ||
+      e.key === "j" ||
+      e.key === "J"
+    );
+  }
+
   // keyboard controls – ALWAYS allowed (even before start)
   window.addEventListener("keydown", e => {
     if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") {
       e.preventDefault();
       moveBlaster(-30);
-    } else if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") {
+    }
+
+    if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") {
       e.preventDefault();
       moveBlaster(30);
     }
+
+    if (isFireKeyEvent(e)) {
+      e.preventDefault();
+      startAutoFire();
+    }
+  });
+
+  window.addEventListener("keyup", e => {
+    if (isFireKeyEvent(e)) {
+      e.preventDefault();
+      stopAutoFire();
+    }
+  });
+
+  window.addEventListener("blur", () => {
+    stopAutoFire();
   });
 
   // tap / click in background to slide blaster there
@@ -91,7 +126,8 @@ window.addEventListener("load", () => {
       if (
         target.classList.contains("bug") ||
         target.classList.contains("powerup") ||
-        target === startBtn
+        target === startBtn ||
+        target === fireBtn
       ) {
         return;
       }
@@ -118,6 +154,9 @@ window.addEventListener("load", () => {
     [...gameArea.querySelectorAll(".bug, .powerup, .screen-flash")].forEach(el =>
       el.remove()
     );
+    clearShots();
+    stopAutoFire();
+    lastShotTime = 0;
 
     doublePointsActive = false;
     freezeActive = false;
@@ -135,6 +174,9 @@ window.addEventListener("load", () => {
     gameRunning = true;
     resetGame();
     startBtn.classList.add("hidden");
+    if (fireBtn) {
+      fireBtn.classList.remove("hidden");
+    }
     hideMessage();
 
     gameTickInterval = setInterval(() => {
@@ -162,6 +204,12 @@ window.addEventListener("load", () => {
 
   function endGame() {
     gameRunning = false;
+    stopAutoFire();
+    stopSprayLoop();
+    clearShots();
+    if (fireBtn) {
+      fireBtn.classList.add("hidden");
+    }
     clearInterval(gameTickInterval);
     clearInterval(timerInterval);
     gameTickInterval = null;
@@ -207,12 +255,6 @@ window.addEventListener("load", () => {
     inner.appendChild(face);
     bug.appendChild(inner);
 
-    bug.addEventListener(
-      "click",
-      () => handleBugClick(bug, x, y),
-      { passive: true }
-    );
-
     gameArea.appendChild(bug);
 
     setTimeout(() => {
@@ -220,8 +262,12 @@ window.addEventListener("load", () => {
     }, 4000);
   }
 
-  function handleBugClick(bug, x, y) {
+  function handleBugBlast(bug, gaRect = gameArea.getBoundingClientRect()) {
     if (!gameRunning) return;
+
+    const rect = bug.getBoundingClientRect();
+    const x = rect.left + rect.width / 2 - gaRect.left;
+    const y = rect.top + rect.height / 2 - gaRect.top;
 
     createBlastRing(x, y);
     bug.remove();
@@ -257,6 +303,152 @@ window.addEventListener("load", () => {
         scoreEl.textContent = score.toString();
       }
     });
+  }
+
+  /* ---------- SPRAY & PROJECTILES ---------- */
+
+  function fireSprayBurst() {
+    if (!gameRunning) return;
+
+    const now = performance.now();
+    if (now - lastShotTime < 160) return;
+    lastShotTime = now;
+
+    const rect = gameArea.getBoundingClientRect();
+    const originX = blasterX + blasterWidth / 2;
+    const originY = rect.height - 80;
+    const offsets = [-14, 0, 14];
+
+    offsets.forEach(offset => {
+      createShot(originX + offset, originY, offset * 0.02 + (Math.random() - 0.5) * 0.6);
+    });
+
+    startSprayLoop();
+  }
+
+  function createShot(x, y, drift) {
+    const shot = document.createElement("div");
+    const variant = 1 + Math.floor(Math.random() * 3);
+    shot.className = `spray-shot spray-${variant}`;
+    shot.style.left = `${x}px`;
+    shot.style.top = `${y}px`;
+    gameArea.appendChild(shot);
+
+    activeShots.push({
+      el: shot,
+      x,
+      y,
+      drift,
+      speed: 11 + Math.random() * 2
+    });
+  }
+
+  function updateShots() {
+    const areaWidth = gameArea.clientWidth;
+    const gaRect = gameArea.getBoundingClientRect();
+
+    for (let i = activeShots.length - 1; i >= 0; i--) {
+      const shot = activeShots[i];
+      shot.y -= shot.speed;
+      shot.x += shot.drift;
+
+      if (shot.y < -40 || shot.x < -40 || shot.x > areaWidth + 40) {
+        removeShotAt(i);
+        continue;
+      }
+
+      shot.el.style.left = `${shot.x}px`;
+      shot.el.style.top = `${shot.y}px`;
+
+      if (detectShotHit(shot, gaRect)) {
+        removeShotAt(i);
+      }
+    }
+
+    if (gameRunning || activeShots.length > 0) {
+      sprayLoopId = requestAnimationFrame(updateShots);
+    } else {
+      sprayLoopId = null;
+    }
+  }
+
+  function detectShotHit(shot, gaRect) {
+    const shotRect = shot.el.getBoundingClientRect();
+    const bugs = [...gameArea.querySelectorAll(".bug")];
+
+    for (const bug of bugs) {
+      const bugRect = bug.getBoundingClientRect();
+      if (rectsOverlap(shotRect, bugRect)) {
+        handleBugBlast(bug, gaRect);
+        return true;
+      }
+    }
+
+    const powerups = [...gameArea.querySelectorAll(".powerup")];
+    for (const powerup of powerups) {
+      const powerRect = powerup.getBoundingClientRect();
+      if (rectsOverlap(shotRect, powerRect)) {
+        const type = powerup.dataset.type;
+        if (type) {
+          activatePowerup(type);
+        }
+        powerup.remove();
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  function rectsOverlap(a, b) {
+    return !(
+      a.right < b.left ||
+      a.left > b.right ||
+      a.bottom < b.top ||
+      a.top > b.bottom
+    );
+  }
+
+  function removeShotAt(index) {
+    const shot = activeShots[index];
+    if (!shot) return;
+    shot.el.remove();
+    activeShots.splice(index, 1);
+  }
+
+  function clearShots() {
+    while (activeShots.length) {
+      const shot = activeShots.pop();
+      if (shot) {
+        shot.el.remove();
+      }
+    }
+  }
+
+  function startSprayLoop() {
+    if (sprayLoopId) return;
+    sprayLoopId = requestAnimationFrame(updateShots);
+  }
+
+  function stopSprayLoop() {
+    if (!sprayLoopId) return;
+    cancelAnimationFrame(sprayLoopId);
+    sprayLoopId = null;
+  }
+
+  function startAutoFire() {
+    if (!gameRunning || fireHoldActive) return;
+    fireHoldActive = true;
+    fireSprayBurst();
+    fireInterval = setInterval(fireSprayBurst, 150);
+  }
+
+  function stopAutoFire() {
+    if (fireInterval) {
+      clearInterval(fireInterval);
+      fireInterval = null;
+    }
+    fireHoldActive = false;
   }
 
   function createBlastRing(x, y) {
@@ -380,6 +572,20 @@ window.addEventListener("load", () => {
   /* ---------- EVENT HOOKS ---------- */
 
   startBtn.addEventListener("click", startGame);
+
+  if (fireBtn) {
+    fireBtn.addEventListener("pointerdown", e => {
+      e.preventDefault();
+      e.stopPropagation();
+      startAutoFire();
+    });
+
+    ["pointerup", "pointerleave", "pointercancel"].forEach(evt => {
+      fireBtn.addEventListener(evt, () => {
+        stopAutoFire();
+      });
+    });
+  }
 
   // initial layout
   initBlaster();

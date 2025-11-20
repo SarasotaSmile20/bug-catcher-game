@@ -314,6 +314,64 @@ body {
   color: #f9fafb;
 }
 
+.spray-shot {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  border-radius: 60% 40% 65% 35% / 50% 50% 70% 30%;
+  pointer-events: none;
+  opacity: 0.95;
+  transform: translate(-50%, -50%);
+  animation: spray-wiggle 0.5s ease-in-out infinite alternate;
+  filter: drop-shadow(0 0 12px rgba(244, 114, 182, 0.6));
+  z-index: 7;
+}
+
+.spray-shot::after {
+  content: "";
+  position: absolute;
+  top: 18%;
+  right: 12%;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85);
+  filter: blur(0.4px);
+  animation: spray-sparkle 0.28s linear infinite;
+}
+
+.spray-1 {
+  background: radial-gradient(circle at 25% 25%, #fdf2f8, #f472b6 55%, #f43f5e);
+}
+
+.spray-2 {
+  background: radial-gradient(circle at 25% 25%, #ecfeff, #38bdf8 55%, #6366f1);
+}
+
+.spray-3 {
+  background: radial-gradient(circle at 25% 25%, #fef9c3, #fbbf24 55%, #fb923c);
+}
+
+@keyframes spray-wiggle {
+  from {
+    transform: translate(-50%, -50%) rotate(-8deg) scale(0.9);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(8deg) scale(1.05);
+  }
+}
+
+@keyframes spray-sparkle {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-2px, -5px) scale(0.6);
+  }
+}
+
 @keyframes pulse {
   from {
     transform: translate3d(0, 0, 0) scale(0.95);
@@ -439,6 +497,36 @@ body {
   box-shadow:
     0 8px 24px rgba(34, 197, 94, 0.4),
     0 0 0 1px rgba(15, 23, 42, 0.5);
+}
+
+.fire-button {
+  position: absolute;
+  right: 20px;
+  bottom: 18px;
+  padding: 12px 24px;
+  border-radius: 18px;
+  border: none;
+  font-weight: 800;
+  font-size: 1rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: linear-gradient(130deg, #fb7185, #f472b6, #f87171);
+  color: #0f172a;
+  box-shadow:
+    0 6px 22px rgba(244, 114, 182, 0.45),
+    0 0 0 1px rgba(15, 23, 42, 0.4);
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+  z-index: 9;
+  touch-action: manipulation;
+}
+
+.fire-button:active {
+  transform: translateY(3px) scale(0.97);
+  box-shadow:
+    0 4px 16px rgba(244, 114, 182, 0.38),
+    0 0 0 1px rgba(15, 23, 42, 0.45);
+  filter: brightness(0.95);
 }
 
 .message {
