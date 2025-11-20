@@ -18,7 +18,8 @@ window.addEventListener("load", () => {
   const startBtn = document.getElementById("start-btn");
   const messageEl = document.getElementById("message");
   const blaster = document.getElementById("blaster");
-  const fireBtn = document.getElementById("fire-btn");
+  const playerNameInput = document.getElementById("player-name");
+  const leaderboardList = document.getElementById("leaderboard-list");
 
   // Sounds
   const sndLaser = document.getElementById("snd-laser");
@@ -28,22 +29,43 @@ window.addEventListener("load", () => {
 
   let score = 0;
   let timeLeft = 30;
-  let gameTickInterval = null;
+  let spawnTimeout = null;
   let timerInterval = null;
   let gameRunning = false;
 
   let doublePointsActive = false;
   let freezeActive = false;
   let powerupTimeout = null;
+  const INITIAL_SPAWN_DELAY = 900;
+  const MIN_SPAWN_DELAY = 280;
+  const SPAWN_ACCELERATION = 0.94;
+  let spawnDelay = INITIAL_SPAWN_DELAY;
 
   // blaster position (in pixels within gameArea)
   let blasterX = 0;
   let blasterWidth = 0;
   const activeShots = [];
   let sprayLoopId = null;
-  let fireInterval = null;
-  let fireHoldActive = false;
+  let sprayInterval = null;
   let lastShotTime = 0;
+  let currentPlayer = "";
+  const SCOREBOARD_KEY = "spaceBugScores";
+  const PLAYER_NAME_KEY = "spaceBugPlayerName";
+  let leaderboardData = loadLeaderboard();
+  renderLeaderboard();
+
+  if (playerNameInput) {
+    const savedName = localStorage.getItem(PLAYER_NAME_KEY) || "";
+    playerNameInput.value = savedName;
+    currentPlayer = savedName.trim();
+    playerNameInput.addEventListener("input", () => {
+      const sanitized = playerNameInput.value.replace(/[^a-z0-9 _-]/gi, "").slice(0, 16);
+      if (sanitized !== playerNameInput.value) {
+        playerNameInput.value = sanitized;
+      }
+      localStorage.setItem(PLAYER_NAME_KEY, sanitized);
+    });
+  }
 
   // Load best score
   const storedBest = parseInt(localStorage.getItem("spaceBugBest") || "0", 10);
@@ -77,17 +99,6 @@ window.addEventListener("load", () => {
     moveBlasterTo(blasterX + delta);
   }
 
-  function isFireKeyEvent(e) {
-    return (
-      e.code === "Space" ||
-      e.key === " " ||
-      e.key === "Space" ||
-      e.key === "Spacebar" ||
-      e.key === "j" ||
-      e.key === "J"
-    );
-  }
-
   // keyboard controls – ALWAYS allowed (even before start)
   window.addEventListener("keydown", e => {
     if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") {
@@ -100,43 +111,54 @@ window.addEventListener("load", () => {
       moveBlaster(30);
     }
 
-    if (isFireKeyEvent(e)) {
-      e.preventDefault();
-      startAutoFire();
-    }
   });
 
-  window.addEventListener("keyup", e => {
-    if (isFireKeyEvent(e)) {
-      e.preventDefault();
-      stopAutoFire();
-    }
-  });
+  function shouldIgnorePointerTarget(target) {
+    return (
+      target.classList.contains("bug") ||
+      target.classList.contains("powerup") ||
+      target === startBtn
+    );
+  }
 
-  window.addEventListener("blur", () => {
-    stopAutoFire();
-  });
+  function moveToPointer(clientX) {
+    const areaRect = gameArea.getBoundingClientRect();
+    const targetX = clientX - areaRect.left;
+    moveBlasterTo(targetX - blasterWidth / 2);
+  }
 
   // tap / click in background to slide blaster there
   gameArea.addEventListener(
     "click",
     e => {
-      // allow movement on background and overlay, but not when clicking bugs/powerups/button
-      const target = e.target;
-      if (
-        target.classList.contains("bug") ||
-        target.classList.contains("powerup") ||
-        target === startBtn ||
-        target === fireBtn
-      ) {
-        return;
-      }
-
-      const areaRect = gameArea.getBoundingClientRect();
-      const targetX = e.clientX - areaRect.left;
-      moveBlasterTo(targetX - blasterWidth / 2);
+      if (shouldIgnorePointerTarget(e.target)) return;
+      moveToPointer(e.clientX);
     },
     { passive: true }
+  );
+
+  const touchOptions = { passive: false };
+  gameArea.addEventListener(
+    "touchstart",
+    e => {
+      if (shouldIgnorePointerTarget(e.target)) return;
+      const touch = e.touches[0];
+      if (!touch) return;
+      moveToPointer(touch.clientX);
+      e.preventDefault();
+    },
+    touchOptions
+  );
+  gameArea.addEventListener(
+    "touchmove",
+    e => {
+      if (shouldIgnorePointerTarget(e.target)) return;
+      const touch = e.touches[0];
+      if (!touch) return;
+      moveToPointer(touch.clientX);
+      e.preventDefault();
+    },
+    touchOptions
   );
 
   window.addEventListener("resize", () => {
@@ -155,8 +177,13 @@ window.addEventListener("load", () => {
       el.remove()
     );
     clearShots();
-    stopAutoFire();
+    stopAutomaticSpray();
     lastShotTime = 0;
+    spawnDelay = INITIAL_SPAWN_DELAY;
+    if (spawnTimeout) {
+      clearTimeout(spawnTimeout);
+      spawnTimeout = null;
+    }
 
     doublePointsActive = false;
     freezeActive = false;
@@ -171,26 +198,26 @@ window.addEventListener("load", () => {
   function startGame() {
     if (gameRunning) return;
 
+    const enteredName = (playerNameInput?.value || "").trim();
+    if (!enteredName) {
+      showMessage(
+        "Pilot Needed",
+        "Enter your call sign to log your scores on the leaderboard.",
+        "Type a name and tap Start Mission!"
+      );
+      return;
+    }
+
+    currentPlayer = enteredName;
+    localStorage.setItem(PLAYER_NAME_KEY, enteredName);
+
     gameRunning = true;
     resetGame();
     startBtn.classList.add("hidden");
-    if (fireBtn) {
-      fireBtn.classList.remove("hidden");
-    }
     hideMessage();
+    beginAutomaticSpray();
 
-    gameTickInterval = setInterval(() => {
-      if (!freezeActive) {
-        const spawnCount = Math.random() < 0.5 ? 1 : 2;
-        for (let i = 0; i < spawnCount; i++) {
-          spawnBug();
-        }
-      }
-
-      if (Math.random() < 0.18) {
-        spawnPowerup();
-      }
-    }, 850);
+    scheduleSpawnWave();
 
     timerInterval = setInterval(() => {
       timeLeft -= 1;
@@ -204,15 +231,14 @@ window.addEventListener("load", () => {
 
   function endGame() {
     gameRunning = false;
-    stopAutoFire();
     stopSprayLoop();
     clearShots();
-    if (fireBtn) {
-      fireBtn.classList.add("hidden");
+    stopAutomaticSpray();
+    if (spawnTimeout) {
+      clearTimeout(spawnTimeout);
+      spawnTimeout = null;
     }
-    clearInterval(gameTickInterval);
     clearInterval(timerInterval);
-    gameTickInterval = null;
     timerInterval = null;
 
     if (powerupTimeout) {
@@ -227,6 +253,7 @@ window.addEventListener("load", () => {
       localStorage.setItem("spaceBugBest", String(score));
       bestScoreEl.textContent = score.toString();
     }
+    recordScore(currentPlayer, score);
 
     showMessage(
       "Mission Complete!",
@@ -236,6 +263,95 @@ window.addEventListener("load", () => {
 
     startBtn.textContent = "Play Again";
     startBtn.classList.remove("hidden");
+  }
+
+  function scheduleSpawnWave() {
+    if (!gameRunning) return;
+    if (spawnTimeout) {
+      clearTimeout(spawnTimeout);
+    }
+
+    spawnTimeout = setTimeout(() => {
+      if (!gameRunning) return;
+
+      if (!freezeActive) {
+        const intensityBoost = spawnDelay < 600 ? 1 : 0;
+        const spawnCount = 1 + intensityBoost + (Math.random() < 0.4 ? 1 : 0);
+        for (let i = 0; i < spawnCount; i++) {
+          spawnBug();
+        }
+      }
+
+      if (Math.random() < 0.18) {
+        spawnPowerup();
+      }
+
+      spawnDelay = Math.max(MIN_SPAWN_DELAY, spawnDelay * SPAWN_ACCELERATION);
+      scheduleSpawnWave();
+    }, spawnDelay);
+  }
+
+  function recordScore(name, score) {
+    if (!name) return;
+    leaderboardData.push({ name, score, ts: Date.now() });
+    leaderboardData.sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return a.ts - b.ts;
+    });
+    leaderboardData = leaderboardData.slice(0, 6);
+    saveLeaderboard();
+    renderLeaderboard();
+  }
+
+  function loadLeaderboard() {
+    try {
+      const raw = localStorage.getItem(SCOREBOARD_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+      return parsed
+        .filter(entry => entry && typeof entry.name === "string" && typeof entry.score === "number")
+        .map(entry => ({
+          name: entry.name,
+          score: entry.score,
+          ts: entry.ts || Date.now()
+        }));
+    } catch {
+      return [];
+    }
+  }
+
+  function saveLeaderboard() {
+    try {
+      localStorage.setItem(SCOREBOARD_KEY, JSON.stringify(leaderboardData));
+    } catch {
+      // ignore
+    }
+  }
+
+  function renderLeaderboard() {
+    if (!leaderboardList) return;
+    leaderboardList.innerHTML = "";
+    if (!leaderboardData.length) {
+      const li = document.createElement("li");
+      li.className = "empty-entry";
+      li.textContent = "No scores yet — be the first pilot!";
+      leaderboardList.appendChild(li);
+      return;
+    }
+
+    leaderboardData.slice(0, 5).forEach(entry => {
+      const li = document.createElement("li");
+      const nameSpan = document.createElement("span");
+      nameSpan.className = "pilot-name";
+      nameSpan.textContent = entry.name;
+      const scoreSpan = document.createElement("span");
+      scoreSpan.className = "pilot-score";
+      scoreSpan.textContent = entry.score.toString();
+      li.appendChild(nameSpan);
+      li.appendChild(scoreSpan);
+      leaderboardList.appendChild(li);
+    });
   }
 
   function spawnBug() {
@@ -311,7 +427,7 @@ window.addEventListener("load", () => {
     if (!gameRunning) return;
 
     const now = performance.now();
-    if (now - lastShotTime < 160) return;
+    if (now - lastShotTime < 120) return;
     lastShotTime = now;
 
     const rect = gameArea.getBoundingClientRect();
@@ -436,19 +552,16 @@ window.addEventListener("load", () => {
     sprayLoopId = null;
   }
 
-  function startAutoFire() {
-    if (!gameRunning || fireHoldActive) return;
-    fireHoldActive = true;
+  function beginAutomaticSpray() {
+    if (sprayInterval) return;
     fireSprayBurst();
-    fireInterval = setInterval(fireSprayBurst, 150);
+    sprayInterval = setInterval(fireSprayBurst, 160);
   }
 
-  function stopAutoFire() {
-    if (fireInterval) {
-      clearInterval(fireInterval);
-      fireInterval = null;
-    }
-    fireHoldActive = false;
+  function stopAutomaticSpray() {
+    if (!sprayInterval) return;
+    clearInterval(sprayInterval);
+    sprayInterval = null;
   }
 
   function createBlastRing(x, y) {
@@ -572,20 +685,6 @@ window.addEventListener("load", () => {
   /* ---------- EVENT HOOKS ---------- */
 
   startBtn.addEventListener("click", startGame);
-
-  if (fireBtn) {
-    fireBtn.addEventListener("pointerdown", e => {
-      e.preventDefault();
-      e.stopPropagation();
-      startAutoFire();
-    });
-
-    ["pointerup", "pointerleave", "pointercancel"].forEach(evt => {
-      fireBtn.addEventListener(evt, () => {
-        stopAutoFire();
-      });
-    });
-  }
 
   // initial layout
   initBlaster();

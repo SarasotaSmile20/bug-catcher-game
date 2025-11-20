@@ -119,9 +119,9 @@ body {
 
 .bug {
   position: absolute;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
+  width: 68px;
+  height: 48px;
+  border-radius: 55% 45% 60% 40% / 65% 35% 55% 45%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -134,8 +134,8 @@ body {
 
 .bug-inner {
   width: 80%;
-  height: 80%;
-  border-radius: 50%;
+  height: 90%;
+  border-radius: 60% 40% 65% 35% / 60% 40% 55% 45%;
   position: relative;
 }
 
@@ -499,36 +499,6 @@ body {
     0 0 0 1px rgba(15, 23, 42, 0.5);
 }
 
-.fire-button {
-  position: absolute;
-  right: 20px;
-  bottom: 18px;
-  padding: 12px 24px;
-  border-radius: 18px;
-  border: none;
-  font-weight: 800;
-  font-size: 1rem;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  background: linear-gradient(130deg, #fb7185, #f472b6, #f87171);
-  color: #0f172a;
-  box-shadow:
-    0 6px 22px rgba(244, 114, 182, 0.45),
-    0 0 0 1px rgba(15, 23, 42, 0.4);
-  cursor: pointer;
-  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
-  z-index: 9;
-  touch-action: manipulation;
-}
-
-.fire-button:active {
-  transform: translateY(3px) scale(0.97);
-  box-shadow:
-    0 4px 16px rgba(244, 114, 182, 0.38),
-    0 0 0 1px rgba(15, 23, 42, 0.45);
-  filter: brightness(0.95);
-}
-
 .message {
   position: absolute;
   inset: 25% 10% auto 10%;
@@ -554,6 +524,105 @@ body {
 
 .message.hidden {
   display: none;
+}
+
+.player-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: stretch;
+  background: rgba(15, 23, 42, 0.9);
+  border-radius: 16px;
+  padding: 12px 14px;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+}
+
+.player-name-field {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.player-name-field label {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #a5b4fc;
+}
+
+.player-name-field input {
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(15, 23, 42, 0.6);
+  color: #f8fafc;
+  font-size: 1rem;
+  outline: none;
+  transition: border 0.15s ease, box-shadow 0.15s ease;
+}
+
+.player-name-field input:focus {
+  border-color: rgba(129, 140, 248, 0.95);
+  box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.3);
+}
+
+.leaderboard {
+  flex: 1;
+  min-width: 220px;
+  background: rgba(15, 23, 42, 0.7);
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  padding: 10px 12px;
+}
+
+.leaderboard h2 {
+  font-size: 0.95rem;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #f472b6;
+}
+
+.leaderboard ol {
+  list-style: none;
+  counter-reset: pilots;
+}
+
+.leaderboard li {
+  counter-increment: pilots;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  font-size: 0.9rem;
+  gap: 8px;
+}
+
+.leaderboard li::before {
+  content: counter(pilots) ".";
+  margin-right: 6px;
+  color: rgba(248, 250, 252, 0.6);
+}
+
+.leaderboard .pilot-name {
+  font-weight: 600;
+  color: #f8fafc;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leaderboard .pilot-score {
+  font-weight: 700;
+  color: #fcd34d;
+}
+
+.leaderboard .empty-entry {
+  color: rgba(248, 250, 252, 0.7);
+  font-style: italic;
+  padding: 4px 0;
 }
 
 /* Instructions */
