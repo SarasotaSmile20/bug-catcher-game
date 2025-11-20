@@ -20,6 +20,11 @@ window.addEventListener("load", () => {
   const blaster = document.getElementById("blaster");
   const playerNameInput = document.getElementById("player-name");
   const leaderboardList = document.getElementById("leaderboard-list");
+  const gamePage = document.querySelector(".game-page");
+  const gameWrapper = document.querySelector(".game-wrapper");
+  const hud = document.querySelector(".hud");
+  const playerPanel = document.querySelector(".player-panel");
+  const instructionsSection = document.querySelector(".instructions");
 
   // Sounds
   const sndLaser = document.getElementById("snd-laser");
@@ -160,9 +165,52 @@ window.addEventListener("load", () => {
     });
   });
 
-  window.addEventListener("resize", () => {
+  window.addEventListener("resize", resizeCanvas);
+  window.addEventListener("orientationchange", resizeCanvas);
+
+  function resizeCanvas() {
+    if (!gameArea) return;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const maxContentWidth = Math.min(960, viewportWidth);
+
+    if (gamePage) {
+      gamePage.style.width = `${maxContentWidth}px`;
+    }
+
+    const pageStyles = gamePage ? getComputedStyle(gamePage) : null;
+    const padLeft = pageStyles ? parseFloat(pageStyles.paddingLeft || "0") : 0;
+    const padRight = pageStyles ? parseFloat(pageStyles.paddingRight || "0") : 0;
+    const horizontalPadding = padLeft + padRight;
+    const areaWidth = Math.max(320, maxContentWidth - horizontalPadding);
+
+    if (gameWrapper) {
+      gameWrapper.style.width = `${areaWidth}px`;
+    }
+    gameArea.style.width = `${areaWidth}px`;
+
+    const gapValue = pageStyles
+      ? parseFloat(pageStyles.rowGap || pageStyles.gap || "0") || 0
+      : 0;
+
+    const reservedHeight =
+      (hud?.offsetHeight || 0) +
+      (playerPanel?.offsetHeight || 0) +
+      (instructionsSection?.offsetHeight || 0) +
+      gapValue * 2 +
+      32;
+
+    const availableHeight = Math.max(320, viewportHeight - reservedHeight);
+    const clampedHeight = Math.min(viewportHeight - 60, availableHeight);
+    const areaHeight = Math.max(320, clampedHeight);
+
+    if (gameWrapper) {
+      gameWrapper.style.height = `${areaHeight}px`;
+    }
+    gameArea.style.height = `${areaHeight}px`;
+
     initBlaster();
-  });
+  }
 
   /* ---------- GAME LOGIC ---------- */
 
@@ -357,6 +405,8 @@ window.addEventListener("load", () => {
       li.appendChild(scoreSpan);
       leaderboardList.appendChild(li);
     });
+
+    resizeCanvas();
   }
 
   function spawnBug() {
@@ -698,7 +748,15 @@ window.addEventListener("load", () => {
     },
     { passive: false }
   );
+  startBtn.addEventListener(
+    "touchend",
+    e => {
+      e.preventDefault();
+      startGame();
+    },
+    { passive: false }
+  );
 
   // initial layout
-  initBlaster();
+  resizeCanvas();
 });
