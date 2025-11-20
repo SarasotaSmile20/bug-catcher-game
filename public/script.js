@@ -740,6 +740,15 @@ window.addEventListener("load", () => {
     e.stopPropagation();
     startGame();
   });
+  // Additional fallbacks for devices that may not reliably emit pointerup
+  startBtn.addEventListener("touchend", e => {
+    e.stopPropagation();
+    startGame();
+  });
+  startBtn.addEventListener("mouseup", e => {
+    e.stopPropagation();
+    startGame();
+  });
 
   // initial layout
   resizeCanvas();
