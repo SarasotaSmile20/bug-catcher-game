@@ -731,26 +731,15 @@ window.addEventListener("load", () => {
   /* ---------- EVENT HOOKS ---------- */
 
   startBtn.addEventListener("click", startGame);
-  // Prevent the game-area pointer handler from intercepting taps on the button
+  // Ensure pointer events on the button don't bubble to the game-area and
+  // handle pointerup to start the game (covers mouse, touch, and stylus)
   startBtn.addEventListener("pointerdown", e => {
     e.stopPropagation();
   });
-  startBtn.addEventListener(
-    "touchstart",
-    e => {
-      e.preventDefault();
-      startGame();
-    },
-    { passive: false }
-  );
-  startBtn.addEventListener(
-    "touchend",
-    e => {
-      e.preventDefault();
-      startGame();
-    },
-    { passive: false }
-  );
+  startBtn.addEventListener("pointerup", e => {
+    e.stopPropagation();
+    startGame();
+  });
 
   // initial layout
   resizeCanvas();
