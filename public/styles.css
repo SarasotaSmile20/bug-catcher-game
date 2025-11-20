@@ -528,7 +528,8 @@ body {
 
 .start-button {
   position: absolute;
-  inset: 50% auto auto 50%;
+  top: 50%;
+  left: 50%;
   transform: translate(-50%, -50%);
   padding: 10px 22px;
   border-radius: 999px;
@@ -542,6 +543,7 @@ body {
     0 12px 30px rgba(34, 197, 94, 0.35),
     0 0 0 1px rgba(15, 23, 42, 0.4);
   z-index: 10;
+  pointer-events: auto;
   transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
 }
 

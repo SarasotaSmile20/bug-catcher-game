@@ -731,6 +731,10 @@ window.addEventListener("load", () => {
   /* ---------- EVENT HOOKS ---------- */
 
   startBtn.addEventListener("click", startGame);
+  // Prevent the game-area pointer handler from intercepting taps on the button
+  startBtn.addEventListener("pointerdown", e => {
+    e.stopPropagation();
+  });
   startBtn.addEventListener(
     "touchstart",
     e => {
